@@ -4,30 +4,9 @@ using UnityEngine;
 using System.IO;
 using System;
 
-public class PerLinNoise : MonoBehaviour
+public class PerLinNoise
 {
-    private void Awake() {
-        StreamWriter fin = File.CreateText("ASGF.txt");
-        
-        for(float i = 0; i < 3; i += 0.1f) {
-
-            for (float j = 0; j < 7; j += 0.1f) {
-
-                for(float k = 0; k < 5; k += 0.1f) {
-
-                    Vector3 vec = new(i, j , k);
-
-                    fin.Write(PerLinNoise3D(vec));
-                   fin.Write(" ");
-                }
-                fin.Write("\n");
-            }
-           fin.Write("\n!\n");
-        }
-        Debug.Log("daf");
-
-    }
-
+    
     int seed = 3667;
     
     (float, float, float) interval = (0,0,0);
@@ -37,7 +16,7 @@ public class PerLinNoise : MonoBehaviour
         this.seed = seed;
     }
 
-    private float PerLinNoise3D(Vector3 coor) {
+    public float PerLinNoise3D(Vector3 coor) {
 
         int[] checkRangeX = { 0, 1, 0, 1, 0, 1, 0, 1 };
         int[] checkRangeY = { 0, 0, 1, 1, 0, 0, 1, 1 };
