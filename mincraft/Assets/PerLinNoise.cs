@@ -50,20 +50,20 @@ public class PerLinNoise
 
     private float PerlinNoise2D(Vector2 coor) {
 
-        Vector2 grid        = new(SetGrid(coor.x), SetGrid(coor.y));
+        Vector2Int grid        = new(SetGrid(coor.x), SetGrid(coor.y));
 
         var     interval    = SetInterval();
 
-        float   leftUp      = RandomDotProduction2D((int)grid.x,        (int)grid.y, coor); 
-        float   rightUp     = RandomDotProduction2D((int)grid.x + 1,    (int)grid.y, coor); 
-        float   leftDown    = RandomDotProduction2D((int)grid.x,        (int)grid.y + 1, coor); 
-        float   rightDown   = RandomDotProduction2D((int)grid.x + 1,    (int)grid.y + 1, coor);
+        float   leftUp      = RandomDotProduction2D(grid.x,     grid.y,     coor); 
+        float   rightUp     = RandomDotProduction2D(grid.x + 1, grid.y,     coor); 
+        float   leftDown    = RandomDotProduction2D(grid.x,     grid.y + 1, coor); 
+        float   rightDown   = RandomDotProduction2D(grid.x + 1, grid.y + 1, coor);
 
         float   lerpX1      = Lerp(interval.Item1, leftUp,      rightUp);
         float   lerpX2      = Lerp(interval.Item1, leftDown,    rightDown);
         float   result      = Lerp(interval.Item2, lerpX1,      lerpX2);
 
-        return result  + 1;
+        return result + 1;
 
         (float, float) SetInterval() {
 
@@ -114,15 +114,15 @@ public class PerLinNoise
         int[] checkRangeY = { 0, 0, 1, 1, 0, 0, 1, 1 };
         int[] checkRangeZ = { 0, 0, 0, 0, 1, 1, 1, 1 };
 
-        Vector3 grid = new(SetGrid(coor.x), SetGrid(coor.y), SetGrid(coor.z));
+        Vector3Int grid = new(SetGrid(coor.x), SetGrid(coor.y), SetGrid(coor.z));
 
         List<float> list = new();
 
         for(int i = 0; i < 8; i++) {
 
-            int currentGridX = (int)grid.x + checkRangeX[i];
-            int currentGridY = (int)grid.y + checkRangeY[i];
-            int currentGridZ = (int)grid.z + checkRangeZ[i];
+            int currentGridX = grid.x + checkRangeX[i];
+            int currentGridY = grid.y + checkRangeY[i];
+            int currentGridZ = grid.z + checkRangeZ[i];
 
             list.Add(RandomDotProduct3D(currentGridX, currentGridY, currentGridZ, coor));
         }
