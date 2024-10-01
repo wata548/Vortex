@@ -166,14 +166,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd000bbe0af585b419ffa339e0d388aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  grass1: {fileID: 2100000, guid: 033a42f6defd092459e21647c57a4577, type: 2}
+  grass2: {fileID: 2100000, guid: 63fa81316a234ac459bc61e6eec3e25d, type: 2}
+  stone: {fileID: 2100000, guid: 84183e5333bc32543b041fe4b569da81, type: 2}
   prefab: {fileID: 1181968126}
-  seed: 76
+  seed: 234
   startCoor: {x: 0, y: 0, z: 0}
   interval: {x: 0.1, y: 0.1, z: 0.1}
-  size: {x: 70, y: 70, z: 1}
+  size: {x: 50, y: 30, z: 50}
   flat: 0
-  octave: 3
+  twoD: 1
+  octave: 2
   incresePoint2D: 10
+  foundation: 20
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -367,8 +372,8 @@ Transform:
   m_GameObject: {fileID: 1136946164}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 31.3, y: 0.1, z: 32.9}
-  m_LocalScale: {x: 77.878555, y: 34.226025, z: 74.42207}
+  m_LocalPosition: {x: 25, y: 11, z: 25}
+  m_LocalScale: {x: 50, y: 30, z: 50}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
