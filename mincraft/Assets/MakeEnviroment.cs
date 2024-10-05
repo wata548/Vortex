@@ -105,6 +105,7 @@ public class MakeEnviroment : MonoBehaviour
             }
         }
         void FixEnviroment2D() {
+
             int countX = size.x;
             int countY = size.y;
             int countZ = size.z;
@@ -134,6 +135,7 @@ public class MakeEnviroment : MonoBehaviour
     }
 
     void MakeEnviroment3D() {
+
         int countX = size.x;
         int countY = size.y;
         int countZ = size.z;
@@ -161,6 +163,7 @@ public class MakeEnviroment : MonoBehaviour
     }
 
     IEnumerator MakeEnviroment2DAnimation(float coorY = 0) {
+
         yield return new WaitForSeconds(0.01f);
 
         while(objects.Count != 0) {
