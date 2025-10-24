@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Drawing;
 using System;
 using System.IO;
+using UnityEngine.Serialization;
 using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
 
 
@@ -13,16 +14,16 @@ public class MakeEnviroment : MonoBehaviour
     [SerializeField] Material grass2;
     [SerializeField] Material stone;
 
-    [SerializeField] GameObject         prefab;
-    [SerializeField] int                seed                 = 14;
-    [SerializeField] Vector3            startCoor            = new(0,0,0);
-    [SerializeField] Vector3            interval             = new(0.1f,0.1f,0.1f);
-    [SerializeField] Vector3Int         size                 = new(30, 10, 30);
-    [SerializeField] bool               flat                 = false;
-    [SerializeField] bool               twoD                 = false;
-    [SerializeField] int                octave               = 1;
-                     List<GameObject>   objects              = new();
-                     PerLinNoise        perlinNoiseGenerator = null;
+    [SerializeField] GameObject _prefab;
+    [SerializeField] int _seed = 14;
+    [SerializeField] Vector3 _origin = new(0,0,0);
+    [SerializeField] Vector3 _perlinInterval = new(0.1f,0.1f,0.1f);
+    [SerializeField] Vector3Int _chunkSize = new(10, 10, 10);
+    [SerializeField] bool _isAnimate = false;
+    [SerializeField] bool _hasHole = false;
+    [SerializeField] int _octave = 1;
+    List<GameObject>   _animationPool              = new();
+    PerLinNoise        _perlinNoise = null;
 
     [SerializeField] int                incresePoint2D       = 20;
     [SerializeField] int                foundation           = 30;
@@ -31,47 +32,39 @@ public class MakeEnviroment : MonoBehaviour
 
     void Awake()
     {
-        perlinNoiseGenerator = new(seed);
+        _perlinNoise = new(_seed);
 
-        if(twoD) {
-
-            MakeEnviroment2D();
+        if (_isAnimate) {
+            StartCoroutine(MakeEnv2DAnimation());
+            return;
         }
-
-        else {
-
-            if (flat) {
-
-                StartCoroutine(MakeEnviroment2DAnimation());
-            }
-
-            else {
-                MakeEnviroment3D();
-            }
-        }
+        if (_hasHole)
+            MakeEnv3D();
+        else 
+            MakeEnv2D();
     }
 
     
-    void MakeEnviroment2D() {
+    void MakeEnv3D() {
 
         MakeFoundation();
 
-        int countX = size.x;
-        int countZ = size.z;
+        int countX = _chunkSize.x;
+        int countZ = _chunkSize.z;
 
-        float indexZ = startCoor.y + transform.position.y;
+        float indexZ = _origin.y + transform.position.y;
 
-        for(int i = 0; i < countZ; i++, indexZ += interval.z) {
+        for(int i = 0; i < countZ; i++, indexZ += _perlinInterval.z) {
 
-            float indexX = startCoor.x + transform.position.x;
-            for(int j = 0; j < countX; j++, indexX += interval.x) {
+            float indexX = _origin.x + transform.position.x;
+            for(int j = 0; j < countX; j++, indexX += _perlinInterval.x) {
 
-                float per = perlinNoiseGenerator.PerlinNoise2D(new Vector3(indexX, indexZ), octave);
+                float per = _perlinNoise.Get(indexX, indexZ, _octave);
                 int result =  (int)( per * incresePoint2D);
 
                 for(int k = 0; k < result; k++) {
 
-                    GameObject tmep = Instantiate(prefab);
+                    GameObject tmep = Instantiate(_prefab);
                     tmep.transform.position = new(transform.position.x + i, transform.position.y + k + foundation, transform.position.z + j);
                     tmep.GetComponent<MeshRenderer>().sharedMaterial = (UnityEngine.Random.Range(0, 2) == 0 ? grass1 : grass2);
 
@@ -79,48 +72,48 @@ public class MakeEnviroment : MonoBehaviour
                 }
             }
         }
-        FixEnviroment2D();
+        FixEnv3D();
 
         void MakeFoundation() {
 
-            int countX = size.x;
-            int countZ = size.z;
+            int countX = _chunkSize.x;
+            int countZ = _chunkSize.z;
 
-            float indexZ = startCoor.z;
+            float indexZ = _origin.z;
 
-            for (int i = 0; i < countZ; i++, indexZ += interval.z) {
+            for (int i = 0; i < countZ; i++, indexZ += _perlinInterval.z) {
 
-                float indexX = startCoor.x;
-                for (int j = 0; j < countX; j++, indexX += interval.x) {
+                float indexX = _origin.x;
+                for (int j = 0; j < countX; j++, indexX += _perlinInterval.x) {
 
                     for (int k = 0; k < foundation; k++) {
 
-                        GameObject tmep = Instantiate(prefab);
-                        tmep.transform.position = new(transform.position.x + i, transform.position.y + k, transform.position.z + j);
-                        tmep.GetComponent<MeshRenderer>().sharedMaterial = stone;
+                        GameObject temp = Instantiate(_prefab);
+                        temp.transform.position = new(transform.position.x + i, transform.position.y + k, transform.position.z + j);
+                        temp.GetComponent<MeshRenderer>().sharedMaterial = stone;
 
-                        map.Add(tmep.transform.position, tmep);
+                        map.Add(temp.transform.position, temp);
                     }
                 }
             }
         }
-        void FixEnviroment2D() {
+        void FixEnv3D() {
 
-            int countX = size.x;
-            int countY = size.y;
-            int countZ = size.z;
+            int countX = _chunkSize.x;
+            int countY = _chunkSize.y;
+            int countZ = _chunkSize.z;
 
-            float indexZ = startCoor.z + transform.position.z;
+            float indexZ = _origin.z + transform.position.z;
 
-            for (int i = 0; i < countZ; i++, indexZ += interval.z) {
+            for (int i = 0; i < countZ; i++, indexZ += _perlinInterval.z) {
 
-                float indexY = startCoor.y + transform.position.y;
-                for (int j = 0; j < incresePoint2D * 2 + foundation; j++, indexY += interval.y) {
+                float indexY = _origin.y + transform.position.y;
+                for (int j = 0; j < incresePoint2D * 2 + foundation; j++, indexY += _perlinInterval.y) {
 
-                    float indexX = startCoor.x + transform.position.x;
-                    for (int k = 0; k < countX; k++, indexX += interval.x) {
+                    float indexX = _origin.x + transform.position.x;
+                    for (int k = 0; k < countX; k++, indexX += _perlinInterval.x) {
 
-                        float result = perlinNoiseGenerator.PerlinNoise3D(new Vector3(indexX, indexY, indexZ), octave);
+                        float result = _perlinNoise.Get(new Vector3(indexX, indexY, indexZ), _octave);
 
                         Vector3 position = new(transform.position.x + k, transform.position.y + j, transform.position.z + i);
                         if (result < -0.25f && map.ContainsKey(position)) {
@@ -134,73 +127,69 @@ public class MakeEnviroment : MonoBehaviour
         }
     }
 
-    void MakeEnviroment3D() {
+    void MakeEnv2D() {
 
-        int countX = size.x;
-        int countY = size.y;
-        int countZ = size.z;
+        int countX = _chunkSize.x;
+        int countY = _chunkSize.y;
+        int countZ = _chunkSize.z;
 
-        float indexZ = startCoor.z + transform.position.z;
+        float indexZ = _origin.z + transform.position.z;
 
-        for (int i = 0; i < countZ; i++, indexZ += interval.z) {
+        for (int i = 0; i < countZ; i++, indexZ += _perlinInterval.z) {
 
-            float indexY = startCoor.y + transform.position.y;
-            for(int j = 0; j < countY; j++, indexY += interval.y) {
+            float indexY = _origin.y + transform.position.y;
+            for(int j = 0; j < countY; j++, indexY += _perlinInterval.y) {
 
-                float indexX = startCoor.x + transform.position.x;
-                for(int k = 0; k < countX; k++, indexX += interval.x) {
+                float indexX = _origin.x + transform.position.x;
+                for(int k = 0; k < countX; k++, indexX += _perlinInterval.x) {
 
-                    float result = perlinNoiseGenerator.PerlinNoise3D(new Vector3(indexX, indexY, indexZ), octave);
+                    float result = _perlinNoise.Get(new Vector3(indexX, indexY, indexZ), _octave);
 
                     if (result > 0) {
 
-                        GameObject tmep = Instantiate(prefab);
-                        tmep.transform.position = new(transform.position.x + k, transform.position.y + j, transform.position.z + i);
+                        var temp = Instantiate(_prefab);
+                        temp.transform.position = new(transform.position.x + k, transform.position.y + j, transform.position.z + i);
                     }
                 }
             }
         }
     }
 
-    IEnumerator MakeEnviroment2DAnimation(float coorY = 0) {
+    IEnumerator MakeEnv2DAnimation(float coorY = 0) {
 
-        yield return new WaitForSeconds(0.01f);
+        
+        yield return new WaitForSeconds(0.1f);
 
-        while(objects.Count != 0) {
-            Destroy(objects[0]);
-            objects.RemoveAt(0);
+        while(_animationPool.Count != 0) {
+            Destroy(_animationPool[0]);
+            _animationPool.RemoveAt(0);
         }
 
-        int countX = size.x;
-        int countZ = size.z;
+        int countX = _chunkSize.x;
+        int countZ = _chunkSize.z;
 
-        float indexX = startCoor.x + transform.position.x;
+        float indexX = _origin.x + transform.position.x;
 
         //List<GameObject> newList = new();
-        for(int i = 0; i < countX; i++, indexX += interval.x) {
+        for(int i = 0; i < countX; i++, indexX += _perlinInterval.x) {
 
-            float indexZ = startCoor.z + transform.position.z;
-            for(int j = 0; j < countZ; j++, indexZ += interval.z) {
+            float indexZ = _origin.z + transform.position.z;
+            for(int j = 0; j < countZ; j++, indexZ += _perlinInterval.z) {
 
-                float d = perlinNoiseGenerator.PerlinNoise3D(new Vector3(indexX, coorY + startCoor.y, indexZ), octave);
+                float d = _perlinNoise.Get(new Vector3(indexX, coorY + _origin.y, indexZ), _octave);
 
                 if (d > 0) {
 
-                    GameObject tmep = Instantiate(prefab);
+                    GameObject tmep = Instantiate(_prefab);
                     tmep.transform.position = new(transform.position.x + j, transform.position.y + i, transform.position.z + 0);
-                    objects.Add(tmep);
+                    _animationPool.Add(tmep);
                 }
             }
         }
 
-        if(coorY < size.y) {
+        if(coorY < _chunkSize.y) {
 
-            StartCoroutine(MakeEnviroment2DAnimation(coorY + interval.y));
+            StartCoroutine(MakeEnv2DAnimation(coorY + _perlinInterval.y));
         }
-    }
-
-    void Update()
-    {
-        
     }
 }
