@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Extension;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace MapGenerator {
@@ -28,9 +30,12 @@ namespace MapGenerator {
     public class MapEnv {
 
         private static Vector3[] UP_FACE_PIVOTS;
+        private static Vector3[] DOWN_FACE_PIVOTS;
+        private static int[] TRIANGLE_PIVOTS = new[] { 0, 1, 2, 0, 2, 3 };
         
         public MapEnv() {
             UP_FACE_PIVOTS = new Vector3[]{ new(0, 1, 1), new(1, 1, 1), new(1, 1, 0), new(0, 1, 0) };
+            DOWN_FACE_PIVOTS = new Vector3[]{  new(1, 0, 0), new(1, 0, 1), new(0, 0, 1), new(0, 0, 0)  };
         }
         
         public void Generate(Mesh pMesh, MapGenerationArgs pArgs, Vector3 pOrigin) {
@@ -46,7 +51,9 @@ namespace MapGenerator {
                         if (perlinMap[x, y, z] is Block.Checked or Block.Air)
                             continue;
                         
-                        GenerateUpFace(x,y,z);
+                        GenerateHorizontal(UP_FACE_PIVOTS, (x, y, z) => y != limitY - 1 && perlinMap[x, y + 1, z] != Block.Air, x, y, z);
+                        GenerateHorizontal(DOWN_FACE_PIVOTS, (x, y, z) => y != 0  && perlinMap[x, y - 1, z] != Block.Air, x, y, z);
+                        
                     }
                 }
             }
@@ -56,42 +63,35 @@ namespace MapGenerator {
             pMesh.RecalculateNormals();
             pMesh.RecalculateBounds();
 
-            void GenerateDownFace(int x, int y, int z) {
-                if (y != limitY - 1 && perlinMap[x, limitY - y - 2, z] != Block.Air)
+            void GenerateHorizontal(Vector3[] pPivotList, [NotNull] Func<int, int, int, bool> isCeilExist, int x, int y, int z) {
+                if (isCeilExist.Invoke(x,y,z)) 
                     return;
-            }
-            
-            void GenerateUpFace(int x, int y, int z) {
-                if (y != limitY - 1 && perlinMap[x, y + 1, z] != Block.Air)
-                    return;
-                
+                                
                 int lenghtZ = limitZ - z;
                 for (int dz = 1; z + dz < limitZ; dz++) {
-                    
-                    var isCeilExist = y != limitY - 1 && perlinMap[x, y + 1, z + dz] != Block.Air;
+                                    
                     var isEmpty = perlinMap[x, y, z + dz] is Block.Air or Block.Checked;
-                    if (isCeilExist || isEmpty) {
+                    if (isCeilExist.Invoke(x, y,z + dz) || isEmpty) {
                         lenghtZ = dz;
                         break;
                     }
-                
+                                
                     perlinMap[x, y, z + dz] = Block.Checked;
                 }
-                
+                                
                 int widthX = limitX - x;
                 bool endFlag = false;
                 for (int dx = 1; dx + x < limitX; dx++) {
                     for (int dz = 0; dz < lenghtZ; dz++) {
-                        
-                        var isCeilExist = y != limitY - 1 && perlinMap[x + dx, y + 1, z + dz] != Block.Air;
+                                        
                         var isEmpty = perlinMap[x + dx, y, z + dz] is Block.Air or Block.Checked;
-                        if (isCeilExist || isEmpty) {
+                        if (isCeilExist.Invoke(x + dx, y, z + dz) || isEmpty) {
                             widthX = dx;
                             endFlag = true;
                             break;
                         }
                     }
-                
+                                
                     if (endFlag) {
                         break;
                     }
@@ -99,17 +99,16 @@ namespace MapGenerator {
                         perlinMap[x + dx, y, z + dz] = Block.Checked;
                     }
                 }
-                                            
+                                                            
                 var size = new Vector3(widthX, 1, lenghtZ);
                 var pos = new Vector3(x, y, z);
                 var startPoint = vertices.Count;
-                                            
-                foreach (var pivot in UP_FACE_PIVOTS) {
+                                                            
+                foreach (var pivot in pPivotList) {
                     vertices.Add(pos + pivot.Multiple(size));
                 }
-                
-                triangles.AddRange(new[] {startPoint, startPoint + 1, startPoint + 2 });
-                triangles.AddRange(new[] { startPoint, startPoint + 2, startPoint + 3 });
+                                
+                triangles.AddRange(TRIANGLE_PIVOTS.Select(element => element + startPoint));
             }
         }
 
