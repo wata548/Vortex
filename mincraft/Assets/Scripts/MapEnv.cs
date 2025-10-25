@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using Extension;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace MapGenerator {
@@ -13,7 +15,7 @@ namespace MapGenerator {
         public int ChunkLength => (int)(ChunkRange / Interval);
         public int ChunkHeight => BaseHeight + HeightLimit;
 
-        public MapGenerationArgs(int pBaseHeight = 15, int pHeightLimit = 8, int pSeed = 181818, int pChunkRange = 10, float  pInterval = 0.1f, int pOctave = 1) {
+        public MapGenerationArgs(int pBaseHeight = 5, int pHeightLimit = 3, int pSeed = 181818, int pChunkRange = 5, float  pInterval = 0.1f, int pOctave = 1) {
             BaseHeight = pBaseHeight;
             HeightLimit = pHeightLimit;
             Seed = pSeed;
@@ -43,12 +45,46 @@ namespace MapGenerator {
                     for (int z = 0; z < limitZ; z++) {
                         if (perlinMap[x, limitY - 1 - y, z] is Block.Checked or Block.Air)
                             continue;
-
-                        var pos = new Vector3(x, y, z);
-                        var startPoint = vertices.Count;
+                        
                         if (y == 0 || perlinMap[x, limitY - y, z] == Block.Air) {
+                            
+                            int lenghtZ = limitZ - z;
+                            for (int dz = 1; z + dz < limitZ; dz++) {
+                                var temp = y == 0 || perlinMap[x, limitY - y - 1, z + dz] == Block.Air;
+                                if (!temp || perlinMap[x, limitY - 1 - y, z + dz] is Block.Air or Block.Checked) {
+                                    lenghtZ = dz;
+                                    break;
+                                }
+
+                                perlinMap[x, limitY - 1 - y, z + dz] = Block.Checked;
+                            }
+
+                            int widthX = limitX - x;
+                            bool endFlag = false;
+                            for (int dx = 1; dx + x < limitX; dx++) {
+                                for (int dz = 0; dz < lenghtZ; dz++) {
+                                    var temp = y == 0 || perlinMap[x + dx, limitY - y - 1, z + dz] == Block.Air;
+                                    if (!temp || perlinMap[x + dx, limitY - 1 - y, z + dz] is Block.Air or Block.Checked) {
+                                        widthX = dx;
+                                        endFlag = true;
+                                        break;
+                                    }
+                                }
+
+                                if (endFlag) {
+                                    break;
+                                }
+                                for (int dz = 0; dz < lenghtZ; dz++) {
+                                    perlinMap[x + dx, limitY - 1 - y, z + dz] = Block.Checked;
+                                }
+                            }
+                            
+                            var size = new Vector3(widthX, 1, lenghtZ);
+                            var pos = new Vector3(x, limitY - y - 1, z);
+                            var startPoint = vertices.Count;
+                            
                             foreach (var pivot in UPPER_PIVOTS) {
-                                vertices.Add(pos + pivot);
+                                vertices.Add(pos + pivot.Multiple(size));
                             }
 
                             triangles.AddRange(new[] {startPoint, startPoint + 1, startPoint + 2 });

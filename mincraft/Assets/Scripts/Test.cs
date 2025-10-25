@@ -3,6 +3,7 @@
 namespace MapGenerator {
     
     [RequireComponent(typeof(MeshFilter))]
+    [RequireComponent(typeof(MeshRenderer))]
     public class Test: MonoBehaviour {
 
         private void Awake() {
