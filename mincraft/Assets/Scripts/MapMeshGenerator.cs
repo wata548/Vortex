@@ -38,7 +38,7 @@ namespace MapGenerator {
         }
     } 
     
-    public class MapEnv {
+    public class MapMeshGenerator {
 
         [Flags]
         private enum CheckDirection: byte {
@@ -60,7 +60,7 @@ namespace MapGenerator {
         private static Vector3[] BEHIND_FACE_PIVOTS;
         private static int[] TRIANGLE_PIVOTS = { 0, 1, 2, 0, 2, 3 };
         
-        public MapEnv() {
+        public MapMeshGenerator() {
             UP_FACE_PIVOTS = new Vector3[] { new(0, 1, 1), new(1, 1, 1), new(1, 1, 0), new(0, 1, 0) };
             DOWN_FACE_PIVOTS = new Vector3[] { new(1, 0, 0), new(1, 0, 1), new(0, 0, 1), new(0, 0, 0) };
             FRONT_FACE_PIVOTS = new Vector3[] { new(0, 1, 0), new(1, 1, 0), new(1, 0, 0), new(0, 0, 0) };
@@ -130,11 +130,12 @@ namespace MapGenerator {
                     return;
                 if (pIsPreviousExist.Invoke(x,y,z)) 
                     return;
-                                
+
+                var target = perlinMap[x, y, z];
                 int lenghtY = limitY - y;
                 for (int dy = 1; y + dy < limitY; dy++) {
                                     
-                    var isEmpty = perlinMap[x, y + dy, z] == Block.Air || visitCheck[x, y + dy, z].HasFlag(pFlag);
+                    var isEmpty = perlinMap[x, y + dy, z] != target || visitCheck[x, y + dy, z].HasFlag(pFlag);
                     if (pIsPreviousExist.Invoke(x, y + dy, z) || isEmpty) {
                         lenghtY = dy;
                         break;
@@ -148,7 +149,7 @@ namespace MapGenerator {
                 for (int dz = 1; dz + z < limitZ; dz++) {
                     for (int dy = 0; dy < lenghtY; dy++) {
                                         
-                        var isEmpty = perlinMap[x, y + dy, z + dz] == Block.Air || visitCheck[x, y + dy, z + dz].HasFlag(pFlag);
+                        var isEmpty = perlinMap[x, y + dy, z + dz] != target || visitCheck[x, y + dy, z + dz].HasFlag(pFlag);
                         if (pIsPreviousExist.Invoke(x, y + dy, z + dz) || isEmpty) {
                             lengthZ = dz;
                             endFlag = true;
@@ -185,11 +186,12 @@ namespace MapGenerator {
                     return;
                 if (pIsPreviousExist.Invoke(x,y,z)) 
                     return;
-                                
+
+                var target = perlinMap[x, y, z];
                 int lenghtY = limitY - y;
                 for (int dy = 1; y + dy < limitY; dy++) {
                                     
-                    var isEmpty = perlinMap[x, y + dy, z] == Block.Air || visitCheck[x, y + dy, z].HasFlag(pFlag);
+                    var isEmpty = perlinMap[x, y + dy, z] != target || visitCheck[x, y + dy, z].HasFlag(pFlag);
                     if (pIsPreviousExist.Invoke(x, y + dy, z) || isEmpty) {
                         lenghtY = dy;
                         break;
@@ -203,7 +205,7 @@ namespace MapGenerator {
                 for (int dx = 1; dx + x < limitX; dx++) {
                     for (int dy = 0; dy < lenghtY; dy++) {
                                         
-                        var isEmpty = perlinMap[x + dx, y + dy, z] == Block.Air || visitCheck[x + dx, y + dy, z].HasFlag(pFlag);
+                        var isEmpty = perlinMap[x + dx, y + dy, z] != target || visitCheck[x + dx, y + dy, z].HasFlag(pFlag);
                         if (pIsPreviousExist.Invoke(x + dx, y + dy, z) || isEmpty) {
                             lengthX = dx;
                             endFlag = true;
@@ -240,11 +242,12 @@ namespace MapGenerator {
                     return;
                 if (pIsPreviousExist.Invoke(x,y,z)) 
                     return;
-                                
+
+                var target = perlinMap[x, y, z];
                 int lenghtZ = limitZ - z;
                 for (int dz = 1; z + dz < limitZ; dz++) {
                                     
-                    var isEmpty = perlinMap[x, y, z + dz] == Block.Air || visitCheck[x, y, z + dz].HasFlag(pFlag);
+                    var isEmpty = perlinMap[x, y, z + dz] != target || visitCheck[x, y, z + dz].HasFlag(pFlag);
                     if (pIsPreviousExist.Invoke(x, y,z + dz) || isEmpty) {
                         lenghtZ = dz;
                         break;
@@ -258,7 +261,7 @@ namespace MapGenerator {
                 for (int dx = 1; dx + x < limitX; dx++) {
                     for (int dz = 0; dz < lenghtZ; dz++) {
                                         
-                        var isEmpty = perlinMap[x + dx, y, z + dz] == Block.Air || visitCheck[x + dx, y, z + dz].HasFlag(pFlag);
+                        var isEmpty = perlinMap[x + dx, y, z + dz] != target || visitCheck[x + dx, y, z + dz].HasFlag(pFlag);
                         if (pIsPreviousExist.Invoke(x + dx, y, z + dz) || isEmpty) {
                             lengthX = dx;
                             endFlag = true;
@@ -301,7 +304,11 @@ namespace MapGenerator {
 
                         var pos = new Vector3(x * pArgs.Interval, y * pArgs.Interval, z * pArgs.Interval) + pOrigin;
                         var isAir = pCaveRange <= noise.Get(pos, pArgs.Octave);
-                        map[x, y, z] = isAir ? Block.Air : Block.DefaultBlock;
+                        map[x, y, z] = isAir 
+                            ? Block.Air 
+                            : y == height - 1 
+                                ? Block.Grass
+                                : Block.Dirty;
                     }
                 }
             }
