@@ -18,7 +18,16 @@ namespace MapGenerator {
         public int ChunkLength => (int)(ChunkRange / Interval);
         public int ChunkHeight => BaseHeight + HeightLimit;
 
-        public MapGenerationArgs(int pBaseHeight = 64, int pHeightLimit = 15, int pSeed = 181818, int pChunkRange = 5, float  pInterval = 0.1f, int pOctave = 1, float pCaveRange = 0.3f) {
+        public MapGenerationArgs(
+            int pBaseHeight = 16,
+            int pHeightLimit = 16,
+            int pSeed = 181818,
+            int pChunkRange = 1,
+            float  pInterval = 0.0625f,
+            int pOctave = 1,
+            float pCaveRange = 0.3f
+        ) {
+            
             BaseHeight = pBaseHeight;
             HeightLimit = pHeightLimit;
             Seed = pSeed;
@@ -60,7 +69,9 @@ namespace MapGenerator {
             RIGHT_FACE_PIVOTS = new Vector3[] { new(1, 1, 0), new(1, 1, 1), new(1, 0, 1), new(1, 0, 0) };
         }
         
-        public void Generate(Mesh pMesh, MapGenerationArgs pArgs, Vector3 pOrigin) {
+        public Mesh Generate(MapGenerationArgs pArgs, Vector3 pOrigin) {
+            var mesh = new Mesh();
+            pOrigin -= new Vector3(pArgs.Interval, 0, pArgs.Interval);
             var perlinMap = PerlinMapGeneration(pArgs, pOrigin, pArgs.CaveRange);
             var (limitX, limitY, limitZ) = (perlinMap.GetLength(0), perlinMap.GetLength(1), perlinMap.GetLength(2));
             var visitCheck = new CheckDirection[limitX, limitY, limitZ];
@@ -75,38 +86,39 @@ namespace MapGenerator {
                             continue;
 
                         GenerateX(LEFT_FACE_PIVOTS, CheckDirection.Left,
-                            (x, y, z) => x == 0 || perlinMap[x - 1, y, z] != Block.Air, 
+                            (x, y, z) => z == 0 || z == limitZ - 1 || x == 0 || perlinMap[x - 1, y, z] != Block.Air, 
                             x, y, z
                         );
                         GenerateX(RIGHT_FACE_PIVOTS, CheckDirection.Right,
-                            (x, y, z) => x == limitX - 1 || perlinMap[x + 1, y, z] != Block.Air, 
+                            (x, y, z) => z == 0 || z == limitZ - 1 || x == limitX - 1 || perlinMap[x + 1, y, z] != Block.Air, 
                             x, y, z
                         );
                         
                         GenerateY(UP_FACE_PIVOTS, CheckDirection.Up,
-                            (x, y, z) => y != limitY - 1 && perlinMap[x, y + 1, z] != Block.Air,
+                            (x, y, z) =>  x == 0 || z == 0 || x == limitX - 1 || z == limitZ - 1 || y != limitY - 1 && perlinMap[x, y + 1, z] != Block.Air,
                             x, y, z
                         );
                         GenerateY(DOWN_FACE_PIVOTS, CheckDirection.Down,
-                            (x, y, z) => y != 0  && perlinMap[x, y - 1, z] != Block.Air, 
+                            (x, y, z) => x == 0 || z == 0 || x == limitX - 1 || z == limitZ - 1 || y != 0  && perlinMap[x, y - 1, z] != Block.Air, 
                             x, y, z
                         );
                         GenerateZ(FRONT_FACE_PIVOTS, CheckDirection.Front,
-                            (x, y, z) => z == 0 || perlinMap[x, y, z - 1] != Block.Air, 
+                            (x, y, z) => x == 0 || x == limitX - 1 || z == 0 || perlinMap[x, y, z - 1] != Block.Air, 
                             x, y, z
                         );
                         GenerateZ(BEHIND_FACE_PIVOTS, CheckDirection.Behind,
-                            (x, y, z) => z == limitZ - 1 || perlinMap[x, y, z + 1] != Block.Air, 
+                            (x, y, z) => x == 0 || x == limitX - 1 || z == limitZ - 1 || perlinMap[x, y, z + 1] != Block.Air, 
                             x, y, z
                         );
                     }
                 }
             }
 
-            pMesh.vertices = vertices.ToArray();
-            pMesh.triangles = triangles.ToArray();
-            pMesh.RecalculateNormals();
-            pMesh.RecalculateBounds();
+            mesh.vertices = vertices.ToArray();
+            mesh.triangles = triangles.ToArray();
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
             void GenerateX(Vector3[] pPivotList, CheckDirection pFlag, Func<int, int, int, bool> pIsPreviousExist, int x, int y, int z) {
 
                 if (!pFlag.IsFlag())
@@ -276,16 +288,15 @@ namespace MapGenerator {
 
         private Block[,,] PerlinMapGeneration(MapGenerationArgs pArgs, Vector3 pOrigin, float pCaveRange) {
             var noise = new PerLinNoise(pArgs.Seed);
-            var map = new Block[pArgs.ChunkLength, pArgs.ChunkHeight, pArgs.ChunkLength];
+            var map = new Block[pArgs.ChunkLength + 2, pArgs.ChunkHeight, pArgs.ChunkLength + 2];
 
-            for (int z = 0; z < pArgs.ChunkLength; z++) {
-                for (int x = 0; x < pArgs.ChunkLength; x++) {
+            for (int z = 0; z < pArgs.ChunkLength + 2; z++) {
+                for (int x = 0; x < pArgs.ChunkLength + 2; x++) {
                     var heightMapPos = new Vector2(x * pArgs.Interval, z * pArgs.Interval) + new Vector2(pOrigin.x, pOrigin.z);
                     var height = pArgs.BaseHeight + Mathf.FloorToInt(
                         (noise.Get(heightMapPos, pArgs.Octave) + 1) * pArgs.HeightLimit / 2
                     );
 
-                    Debug.Log(height);
                     for (int y = 0; y < height; y++) {
 
                         var pos = new Vector3(x * pArgs.Interval, y * pArgs.Interval, z * pArgs.Interval) + pOrigin;
