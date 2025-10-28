@@ -8,5 +8,8 @@ namespace Extension {
         
         public static Vector2 ToVec2(this Vector3 target) =>
             new(target.x, target.y);
+
+        public static Vector3Int ToVec3Int(this Vector3 pTarget) =>
+            new((int)pTarget.x, (int)pTarget.y, (int)pTarget.z);
     }
 }

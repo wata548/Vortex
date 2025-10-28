@@ -6,61 +6,17 @@ using Extension;
 using UnityEngine;
 
 namespace MapGenerator {
-    public struct MapGenerationArgs {
-        public int BaseHeight;
-        public int HeightLimit;
-        public int Seed;
-        public int ChunkRange;
-        public int Octave;
-        public float Interval;
-        public float CaveRange;
+    public partial class MapMeshGenerator {
 
-        public int ChunkLength => (int)(ChunkRange / Interval);
-        public int ChunkHeight => BaseHeight + HeightLimit;
-
-        public MapGenerationArgs(
-            int pBaseHeight = 16,
-            int pHeightLimit = 16,
-            int pSeed = 181818,
-            int pChunkRange = 1,
-            float  pInterval = 0.0625f,
-            int pOctave = 1,
-            float pCaveRange = 0.3f
-        ) {
-            
-            BaseHeight = pBaseHeight;
-            HeightLimit = pHeightLimit;
-            Seed = pSeed;
-            ChunkRange = pChunkRange;
-            Interval = pInterval;
-            Octave = pOctave;
-            CaveRange = pCaveRange;
-        }
-    } 
-    
-    public class MapMeshGenerator {
-
-        [Flags]
-        private enum CheckDirection: byte {
-            None    = 0b000000,
-            Up      = 0b100000,
-            Down    = 0b010000,
-            Left    = 0b001000,
-            Right   = 0b000100,
-            Front   = 0b000010,
-            Behind  = 0b000001,
-            All     = 0b111111,
-        }
+        private static readonly Vector3[] UP_FACE_PIVOTS;
+        private static readonly Vector3[] DOWN_FACE_PIVOTS;
+        private static readonly Vector3[] LEFT_FACE_PIVOTS;
+        private static readonly Vector3[] RIGHT_FACE_PIVOTS;
+        private static readonly Vector3[] FRONT_FACE_PIVOTS;
+        private static readonly Vector3[] BEHIND_FACE_PIVOTS;
+        private static readonly int[] TRIANGLE_PIVOTS = { 0, 1, 2, 0, 2, 3 };
         
-        private static Vector3[] UP_FACE_PIVOTS;
-        private static Vector3[] DOWN_FACE_PIVOTS;
-        private static Vector3[] LEFT_FACE_PIVOTS;
-        private static Vector3[] RIGHT_FACE_PIVOTS;
-        private static Vector3[] FRONT_FACE_PIVOTS;
-        private static Vector3[] BEHIND_FACE_PIVOTS;
-        private static int[] TRIANGLE_PIVOTS = { 0, 1, 2, 0, 2, 3 };
-        
-        public MapMeshGenerator() {
+        static MapMeshGenerator() {
             UP_FACE_PIVOTS = new Vector3[] { new(0, 1, 1), new(1, 1, 1), new(1, 1, 0), new(0, 1, 0) };
             DOWN_FACE_PIVOTS = new Vector3[] { new(1, 0, 0), new(1, 0, 1), new(0, 0, 1), new(0, 0, 0) };
             FRONT_FACE_PIVOTS = new Vector3[] { new(0, 1, 0), new(1, 1, 0), new(1, 0, 0), new(0, 0, 0) };
@@ -85,6 +41,7 @@ namespace MapGenerator {
                         if (perlinMap[x, y, z] == Block.Air || visitCheck[x,y,z] == CheckDirection.All)
                             continue;
 
+                        //generate direction mesh
                         GenerateX(LEFT_FACE_PIVOTS, CheckDirection.Left,
                             (x, y, z) => z == 0 || z == limitZ - 1 || x == 0 || perlinMap[x - 1, y, z] != Block.Air, 
                             x, y, z
@@ -119,6 +76,11 @@ namespace MapGenerator {
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
+
+            #region SubMethods
+
+            
+
             void GenerateX(Vector3[] pPivotList, CheckDirection pFlag, Func<int, int, int, bool> pIsPreviousExist, int x, int y, int z) {
 
                 if (!pFlag.IsFlag())
@@ -287,33 +249,8 @@ namespace MapGenerator {
                                 
                 triangles.AddRange(TRIANGLE_PIVOTS.Select(element => element + startPoint));
             }
-        }
-
-        private Block[,,] PerlinMapGeneration(MapGenerationArgs pArgs, Vector3 pOrigin, float pCaveRange) {
-            var noise = new PerLinNoise(pArgs.Seed);
-            var map = new Block[pArgs.ChunkLength + 2, pArgs.ChunkHeight, pArgs.ChunkLength + 2];
-
-            for (int z = 0; z < pArgs.ChunkLength + 2; z++) {
-                for (int x = 0; x < pArgs.ChunkLength + 2; x++) {
-                    var heightMapPos = new Vector2(x * pArgs.Interval, z * pArgs.Interval) + new Vector2(pOrigin.x, pOrigin.z);
-                    var height = pArgs.BaseHeight + Mathf.FloorToInt(
-                        (noise.Get(heightMapPos, pArgs.Octave) + 1) * pArgs.HeightLimit / 2
-                    );
-
-                    for (int y = 0; y < height; y++) {
-
-                        var pos = new Vector3(x * pArgs.Interval, y * pArgs.Interval, z * pArgs.Interval) + pOrigin;
-                        var isAir = pCaveRange <= noise.Get(pos, pArgs.Octave);
-                        map[x, y, z] = isAir 
-                            ? Block.Air 
-                            : y == height - 1 
-                                ? Block.Grass
-                                : Block.Dirty;
-                    }
-                }
-            }
-
-            return map;
+            
+            #endregion
         }
     }
 }
