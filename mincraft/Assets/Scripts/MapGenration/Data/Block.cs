@@ -1,5 +1,7 @@
-﻿namespace MapGenerator {
-    public enum Block {
+﻿using System;
+
+namespace MapGenerator {
+    public enum Block:Byte {
         Air,
         Grass,
         Dirty,

@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: deepGrass
+  m_Name: Tiling
   m_Shader: {fileID: 4800000, guid: eab79dec496141b44a8f3ba00815f837, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0

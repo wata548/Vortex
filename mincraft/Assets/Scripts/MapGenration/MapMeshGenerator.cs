@@ -9,13 +9,13 @@ using UnityEngine;
 namespace MapGenerator {
     public partial class MapMeshGenerator {
 
-        private static readonly Vector3[] UP_FACE_PIVOTS;
-        private static readonly Vector3[] DOWN_FACE_PIVOTS;
-        private static readonly Vector3[] LEFT_FACE_PIVOTS;
-        private static readonly Vector3[] RIGHT_FACE_PIVOTS;
-        private static readonly Vector3[] FRONT_FACE_PIVOTS;
-        private static readonly Vector3[] BEHIND_FACE_PIVOTS;
-        private static readonly int[] TRIANGLE_PIVOTS = { 0, 1, 2, 0, 2, 3 };
+        public static readonly Vector3[] UP_FACE_PIVOTS;
+        public static readonly Vector3[] DOWN_FACE_PIVOTS;
+        public static readonly Vector3[] LEFT_FACE_PIVOTS;
+        public static readonly Vector3[] RIGHT_FACE_PIVOTS;
+        public static readonly Vector3[] FRONT_FACE_PIVOTS;
+        public static readonly Vector3[] BEHIND_FACE_PIVOTS;
+        public static readonly int[] TRIANGLE_PIVOTS = { 0, 1, 2, 0, 2, 3 };
         
         static MapMeshGenerator() {
             UP_FACE_PIVOTS = new Vector3[] { new(0, 1, 1), new(1, 1, 1), new(1, 1, 0), new(0, 1, 0) };
@@ -26,7 +26,7 @@ namespace MapGenerator {
             RIGHT_FACE_PIVOTS = new Vector3[] { new(1, 1, 0), new(1, 1, 1), new(1, 0, 1), new(1, 0, 0) };
         }
         
-        public Mesh Generate(MapGenerationArgs pArgs, Vector3 pOrigin) {
+        public (Mesh, Block[,,]) Generate(MapGenerationArgs pArgs, Vector3 pOrigin) {
             var mesh = new Mesh();
             pOrigin -= new Vector3(pArgs.Interval, 0, pArgs.Interval);
             var perlinMap = PerlinMapGeneration(pArgs, pOrigin, pArgs.CaveRange);
@@ -79,7 +79,7 @@ namespace MapGenerator {
             
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
-            return mesh;
+            return (mesh, perlinMap);
 
             #region SubMethods
 

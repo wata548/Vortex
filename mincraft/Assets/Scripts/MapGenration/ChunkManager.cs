@@ -15,7 +15,7 @@ namespace MapGenerator {
     public class ChunkManager: MonoBehaviour {
 
         //==================================================||Constants 
-        private const int SIZE = 1;
+        private const int SIZE = 2;
         private const int MESH_RESTORE_LIMIT = 1200;
         
         //==================================================||Fields 
@@ -29,7 +29,7 @@ namespace MapGenerator {
         private Chunk[,] _chunks = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
         private Chunk[,] _temp = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
         private readonly Queue<(Vector3, Chunk)> _pool = new((2 * SIZE + 1) * (2 * SIZE + 1));
-        private readonly Dictionary<Vector3, Mesh> _chunkMeshStore = new();
+        private readonly Dictionary<Vector3, (Mesh Mesh, Block[,,] Map)> _chunkMeshStore = new();
         private readonly Queue<Vector3> _chunkStoreHistory = new();
         
         //==================================================||Methods 
@@ -120,18 +120,18 @@ namespace MapGenerator {
             var pos = interval.Multiple(idx);
             pos -= new Vector3(_args.ChunkLength / 2f, 0, _args.ChunkLength / 2f);
             
-            if (!_chunkMeshStore.TryGetValue(idx, out var mesh)) {
+            if (!_chunkMeshStore.TryGetValue(idx, out var info)) {
                 var seedPos = idx * _args.ChunkRange;
-                mesh = _generator.Generate(_args, seedPos);
-                StoreMesh(idx, mesh);
+                info = _generator.Generate(_args, seedPos);
+                StoreMesh(idx, info.Mesh, info.Map);
             }
 
-            pChunk.SetUp(mesh, pos);
+            pChunk.SetUp(info.Mesh, pos);
             return pChunk;
         }
 
-        private void StoreMesh(Vector3 pIdx, Mesh pMesh) {
-            _chunkMeshStore.Add(pIdx, pMesh);
+        private void StoreMesh(Vector3 pIdx, Mesh pMesh, Block[,,] pMap) {
+            _chunkMeshStore.Add(pIdx, (pMesh, pMap));
             _chunkStoreHistory.Enqueue(pIdx);
             while (_chunkStoreHistory.Count > MESH_RESTORE_LIMIT) {
                 _chunkMeshStore.Remove(_chunkStoreHistory.Dequeue());
