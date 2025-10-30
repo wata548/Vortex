@@ -1,7 +1,8 @@
 ﻿namespace MapGenerator {
     public enum Block {
         Air,
-        Dirty,
         Grass,
+        Dirty,
+        Stone,
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Extension;
+using MapGenerator.Tile;
 using UnityEngine;
 
 namespace MapGenerator {
@@ -34,6 +35,7 @@ namespace MapGenerator {
 
             var triangles = new List<int>();
             var vertices = new List<Vector3>();
+            var uvs = new List<Vector4>();
             
             for (int y = 0; y < limitY; y++) {
                 for (int x = 0; x < limitX; x++) {
@@ -44,35 +46,37 @@ namespace MapGenerator {
                         //generate direction mesh
                         GenerateX(LEFT_FACE_PIVOTS, CheckDirection.Left,
                             (x, y, z) => z == 0 || z == limitZ - 1 || x == 0 || perlinMap[x - 1, y, z] != Block.Air, 
-                            x, y, z
+                            x, y, z, FaceType.Side
                         );
                         GenerateX(RIGHT_FACE_PIVOTS, CheckDirection.Right,
                             (x, y, z) => z == 0 || z == limitZ - 1 || x == limitX - 1 || perlinMap[x + 1, y, z] != Block.Air, 
-                            x, y, z
+                            x, y, z, FaceType.Side
                         );
                         
                         GenerateY(UP_FACE_PIVOTS, CheckDirection.Up,
                             (x, y, z) =>  x == 0 || z == 0 || x == limitX - 1 || z == limitZ - 1 || y != limitY - 1 && perlinMap[x, y + 1, z] != Block.Air,
-                            x, y, z
+                            x, y, z, FaceType.Up
                         );
                         GenerateY(DOWN_FACE_PIVOTS, CheckDirection.Down,
                             (x, y, z) => x == 0 || z == 0 || x == limitX - 1 || z == limitZ - 1 || y != 0  && perlinMap[x, y - 1, z] != Block.Air, 
-                            x, y, z
+                            x, y, z, FaceType.Down
                         );
                         GenerateZ(FRONT_FACE_PIVOTS, CheckDirection.Front,
                             (x, y, z) => x == 0 || x == limitX - 1 || z == 0 || perlinMap[x, y, z - 1] != Block.Air, 
-                            x, y, z
+                            x, y, z, FaceType.Side
                         );
                         GenerateZ(BEHIND_FACE_PIVOTS, CheckDirection.Behind,
                             (x, y, z) => x == 0 || x == limitX - 1 || z == limitZ - 1 || perlinMap[x, y, z + 1] != Block.Air, 
-                            x, y, z
+                            x, y, z, FaceType.Side
                         );
                     }
                 }
             }
 
             mesh.vertices = vertices.ToArray();
+            mesh.SetUVs(0, uvs);
             mesh.triangles = triangles.ToArray();
+            
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
@@ -81,7 +85,7 @@ namespace MapGenerator {
 
             
 
-            void GenerateX(Vector3[] pPivotList, CheckDirection pFlag, Func<int, int, int, bool> pIsPreviousExist, int x, int y, int z) {
+            void GenerateX(Vector3[] pPivotList, CheckDirection pFlag, Func<int, int, int, bool> pIsPreviousExist, int x, int y, int z, FaceType pFace) {
 
                 if (!pFlag.IsFlag())
                     throw new Exception("pFlag never can be multiFlag");
@@ -135,9 +139,11 @@ namespace MapGenerator {
                     vertices.Add(pos + pivot.Multiple(size));
                 }
                                 
+                var textureIdx = TileIdxData.Get(target, pFace);
                 triangles.AddRange(TRIANGLE_PIVOTS.Select(element => element + startPoint));
+                uvs.AddRange(pPivotList.Select(pivot => new Vector4(pivot.z * lengthZ, pivot.y *  lenghtY, textureIdx.X, textureIdx.Y)));
             }
-            void GenerateZ(Vector3[] pPivotList, CheckDirection pFlag, Func<int, int, int, bool> pIsPreviousExist, int x, int y, int z) {
+            void GenerateZ(Vector3[] pPivotList, CheckDirection pFlag, Func<int, int, int, bool> pIsPreviousExist, int x, int y, int z, FaceType pFace) {
 
                 if (!pFlag.IsFlag())
                     throw new Exception("pFlag never can be multiFlag");
@@ -191,9 +197,11 @@ namespace MapGenerator {
                     vertices.Add(pos + pivot.Multiple(size));
                 }
                                 
+                var textureIdx = TileIdxData.Get(target, pFace);
                 triangles.AddRange(TRIANGLE_PIVOTS.Select(element => element + startPoint));
+                uvs.AddRange(pPivotList.Select(pivot => new Vector4(pivot.x * lengthX , pivot.y *  lenghtY, textureIdx.X, textureIdx.Y)));
             }
-            void GenerateY(Vector3[] pPivotList, CheckDirection pFlag, Func<int, int, int, bool> pIsPreviousExist, int x, int y, int z) {
+            void GenerateY(Vector3[] pPivotList, CheckDirection pFlag, Func<int, int, int, bool> pIsPreviousExist, int x, int y, int z, FaceType pFace) {
 
                 if (!pFlag.IsFlag())
                     throw new Exception("pFlag never can be multiFlag");
@@ -246,8 +254,10 @@ namespace MapGenerator {
                 foreach (var pivot in pPivotList) {
                     vertices.Add(pos + pivot.Multiple(size));
                 }
-                                
+
+                var textureIdx = TileIdxData.Get(target, pFace);
                 triangles.AddRange(TRIANGLE_PIVOTS.Select(element => element + startPoint));
+                uvs.AddRange(pPivotList.Select(pivot => new Vector4(pivot.x * lengthX, pivot.z * lenghtZ, textureIdx.X, textureIdx.Y)));
             }
             
             #endregion

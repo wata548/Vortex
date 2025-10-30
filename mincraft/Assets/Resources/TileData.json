@@ -1,0 +1,14 @@
+﻿{
+  "Air": [],
+  "Grass": [
+    {"Dir": "Up",  "PosX": 0, "PosY": 0},
+    {"Dir": "Side",  "PosX": 1, "PosY": 0},
+    {"Dir": "Down",  "PosX": 2, "PosY": 0}
+  ],
+  "Dirty": [
+    {"Dir": "Up",  "PosX": 2, "PosY": 0}
+  ],
+  "Stone": [
+    {"Dir": "Up", "PosX": 3, "PosY": 0}
+  ]
+}

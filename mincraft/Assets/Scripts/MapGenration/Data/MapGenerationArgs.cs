@@ -22,7 +22,6 @@ namespace MapGenerator {
             int pOctave = 1,
             float pCaveRange = 0.3f
         ) {
-            
             BaseHeight = pBaseHeight;
             HeightLimit = pHeightLimit;
             Seed = pSeed;

@@ -21,7 +21,7 @@ namespace MapGenerator {
                             ? Block.Air 
                             : y == height - 1 
                                 ? Block.Grass
-                                : Block.Dirty;
+                                : Block.Stone;
                     }
                 }
             }
