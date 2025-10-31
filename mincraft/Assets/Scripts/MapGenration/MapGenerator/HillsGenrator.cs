@@ -1,8 +1,9 @@
 ﻿using UnityEngine;
 
 namespace MapGenerator {
-    public partial class MapMeshGenerator { 
-        private Block[,,] PerlinMapGeneration(MapGenerationArgs pArgs, Vector3 pOrigin, float pCaveRange) {
+    /*public class HillsGenrator: IBiomeGenerator {
+        
+        public Block[,,] Generate(MapGenerationArgs pArgs, Vector3 pOrigin) {
             var noise = new PerLinNoise(pArgs.Seed);
             var map = new Block[pArgs.ChunkLength + 2, pArgs.ChunkHeight, pArgs.ChunkLength + 2];
 
@@ -16,7 +17,7 @@ namespace MapGenerator {
                     for (int y = 0; y < height; y++) {
 
                         var pos = new Vector3(x * pArgs.Interval, y * pArgs.Interval, z * pArgs.Interval) + pOrigin;
-                        var isAir = pCaveRange <= noise.Get(pos, pArgs.Octave);
+                        var isAir = pArgs.CaveRange <= noise.Get(pos, pArgs.Octave);
                         map[x, y, z] = isAir 
                             ? Block.Air 
                             : y == height - 1 
@@ -28,6 +29,5 @@ namespace MapGenerator {
 
             return map;
         }
-
-    }
+    }*/
 }

@@ -1,21 +1,20 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.IO;
 using System;
-using UnityEditor;
-using System.Drawing;
-using UnityEngine.Experimental.GlobalIllumination;
+using Random = System.Random;
 
 public class PerLinNoise
 {
     
+   //==================================================||Fields 
     private readonly int SEED = 3667;
     
+   //==================================================||Constructors 
     public PerLinNoise(int pSeed = 12234324) {
         SEED = pSeed;
     }
 
+   //==================================================||Mehods 
     public float Get(float pX, float pY, int pOctave = 1) =>
         Get(new Vector2(pX, pY), pOctave);
 
@@ -77,8 +76,7 @@ public class PerLinNoise
 
         float RandomDotProduction2D(int gridX, int gridY, Vector2 coor) {
 
-            UnityEngine.Random.InitState(SetSeed());
-            float degree = UnityEngine.Random.Range(0, 2 * Mathf.PI); 
+            float degree = (float)(new Random(GetSeed()).NextDouble() * 2 * Mathf.PI);
             float deltaX = coor.x - gridX;
             float deltaY = coor.y - gridY;
 
@@ -92,7 +90,7 @@ public class PerLinNoise
 
             return dotProductionX + dotProductionY;
 
-            int SetSeed() {
+            int GetSeed() {
 
                 int seed = 0;
 
@@ -157,10 +155,10 @@ public class PerLinNoise
 
         float RandomDotProduct3D(int gridX, int gridY, int gridZ, Vector3 coor) {
 
-            UnityEngine.Random.InitState(SetSeed());
+            var r = new Random(GetSeed());
 
-            float degreeFlat = UnityEngine.Random.Range(0, 2 * Mathf.PI);
-            float degreeHeight = UnityEngine.Random.Range(0, 2 * Mathf.PI);
+            float degreeFlat = (float)r.NextDouble() * 2 * Mathf.PI;
+            float degreeHeight = (float)r.NextDouble() * 2 * Mathf.PI;
 
             float deltaX = coor.x - gridX;
             float deltaY = coor.y - gridY;
@@ -177,7 +175,7 @@ public class PerLinNoise
 
             return dotProductionX + dotProductionY + dotProductionZ;
 
-            int SetSeed() {
+            int GetSeed() {
                 int seed = 0;
 
                 int[] RandomMultiple = { 66513, 13, 733 };
@@ -193,11 +191,11 @@ public class PerLinNoise
         }
     }
 
-    float Smooth(float pX) {
+    private float Smooth(float pX) {
         return pX * pX * (3 - 2 * pX);
     }
 
-    float Lerp(float pT, float pX1, float pX2) {
+    private float Lerp(float pT, float pX1, float pX2) {
 
         return (1 - pT) * pX1 + pT * pX2;
     }

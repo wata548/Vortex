@@ -1,26 +1,32 @@
-﻿using System;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Extension;
-using Extension.Test;
-using MapGenerator.Tile;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using TMPro;
 using UnityEngine;
-using UnityEngine.Tilemaps;
 
 namespace MapGenerator {
     
-    public class ChunkManager: MonoBehaviour {
+    public struct MeshData {
 
+        public Vector3Int Idx;
+        public Block[,,] Map;
+        public List<Vector4> Uvs;
+        public int[] Triangles;
+        public List<Vector3> Vertices;
+    }
+    
+    public class ChunkManager: MonoBehaviour {
+        
         //==================================================||Constants 
-        private const int SIZE = 2;
+        private const int SIZE = 4;
         private const int MESH_RESTORE_LIMIT = 1200;
+        private static readonly Vector3 CAMERA_LOCAL_POS = new(0, 0.25f, 0);
         
         //==================================================||Fields 
         [SerializeField] private Chunk _chunkPrefab;
-        [SerializeField] private GameObject _player;
+        [SerializeField] private GameObject _playerPrefab;
+        private GameObject _player = null;
         
         private MapMeshGenerator _generator;
         private MapGenerationArgs _args;
@@ -28,27 +34,42 @@ namespace MapGenerator {
         private Vector3Int _playerChunk;
         private Chunk[,] _chunks = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
         private Chunk[,] _temp = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
-        private readonly Queue<(Vector3, Chunk)> _objectPool = new((2 * SIZE + 1) * (2 * SIZE + 1));
+
+        private readonly ConcurrentQueue<Vector3Int> _generateMeshPosQueue = new();
+        private readonly ConcurrentQueue<MeshData> _meshDataQueue = new();
         
-        private readonly Dictionary<Vector3, (Mesh Mesh, Block[,,] Map)> _chunkMeshStore = new();
-        private readonly Queue<Vector3> _chunkStoreHistory = new();
+        private readonly Dictionary<Vector3Int, (Mesh Mesh, Block[,,] Map)> _chunkMeshStore = new();
+        private readonly Queue<Vector3Int> _chunkStoreHistory = new();
         
         //==================================================||Methods 
-        private void Init() {
-            //Player generation
-            _player.transform.position = Vector3.up * _args.ChunkHeight;
-            _playerChunk = Vector3Int.zero;
+
+        private void SpawnPlayer() {
+            _player = Instantiate(_playerPrefab);
             
+            var camera = Camera.main!;
+            camera.transform.SetParent(_player.transform);
+            camera.transform.localPosition = CAMERA_LOCAL_POS;
+            
+            _player.transform.position = Vector3.up * _args.ChunkHeight;
+        }
+        
+        private void Init() {
+            _playerChunk = Vector3Int.zero;
+                    
             var interval = new Vector3(_args.ChunkLength, 0, _args.ChunkLength);
             for (int i = -SIZE; i <= SIZE; i++) {
                 for (int j = -SIZE; j <= SIZE; j++) {
                     var chunk = Instantiate(_chunkPrefab, _chunkParent);
-                    chunk.Ready(new(j, 0, i));
-                    _chunks[i + SIZE,j + SIZE] = GenerateMesh(chunk);
+                    var idx = new Vector3Int(j, 0, i);
+                    
+                    chunk.Ready(idx);
+                    _generateMeshPosQueue.Enqueue(idx);
+                    
+                    _chunks[i + SIZE,j + SIZE] = chunk;
                 }
             }
         }
-
+        
         private void ChunkRefresh() {
             var newChunkIdx = ToChunkIdx(_player.transform.position);
             if (newChunkIdx == _playerChunk)
@@ -88,51 +109,49 @@ namespace MapGenerator {
                     _temp[i, j] = targetChunk;
                     
                     targetChunk.Ready(pos);
-                    _objectPool.Enqueue((pos, targetChunk));
+                    _generateMeshPosQueue.Enqueue((pos));
                 }
             }
 
             (_chunks, _temp) = (_temp, _chunks);
         }
 
-        private void ChunkPoolGenerator() {
-
-            if (_objectPool.Count == 0)
-                return;
-            
+        private Task GetMeshData() {
             while (true) {
-                var top = _objectPool.Dequeue();
-                if (top.Item1 != top.Item2.Idx)
+                if(!_generateMeshPosQueue.TryDequeue(out var target))
+                    continue;
+                if(_chunkMeshStore.ContainsKey(target))
                     continue;
 
-                GenerateMesh(top.Item2);
-                break;
+                _chunkMeshStore.Add(target, (null, null));
+                _meshDataQueue.Enqueue(_generator.Generate(_args, target));
+                Thread.Sleep(1);
             }
         }
-        
-        private Chunk GenerateMesh(Chunk pChunk) {
 
-            var idx = pChunk.Idx;
-            var interval = new Vector3(_args.ChunkLength, 0, _args.ChunkLength);
-            var pos = interval.Multiple(idx);
-            pos -= new Vector3(_args.ChunkLength / 2f, 0, _args.ChunkLength / 2f);
+        private void RegisterMesh(MeshData pData) {
+            var mesh = new Mesh();
+            mesh.SetVertices(pData.Vertices);
+            mesh.triangles = pData.Triangles;
+            mesh.SetUVs(0, pData.Uvs);
+            mesh.RecalculateBounds();
+            mesh.RecalculateNormals();
             
-            if (!_chunkMeshStore.TryGetValue(idx, out var info)) {
-                var seedPos = idx * _args.ChunkRange;
-                info = _generator.Generate(_args, seedPos);
-                StoreMesh(idx, info.Mesh, info.Map);
-            }
-
-            pChunk.SetUp(info.Mesh, pos);
-            return pChunk;
+            _chunkStoreHistory.Enqueue(pData.Idx);
+            _chunkMeshStore[pData.Idx] = (mesh, pData.Map);
         }
 
-        private void StoreMesh(Vector3 pIdx, Mesh pMesh, Block[,,] pMap) {
-            _chunkMeshStore.Add(pIdx, (pMesh, pMap));
-            _chunkStoreHistory.Enqueue(pIdx);
-            while (_chunkStoreHistory.Count > MESH_RESTORE_LIMIT) {
-                _chunkMeshStore.Remove(_chunkStoreHistory.Dequeue());
-            }
+        private void LoadAllMesh() {
+            var interval = new Vector3(_args.ChunkLength, 0, _args.ChunkLength);
+                    
+            foreach (var chunk in _chunks) {
+                var idx = chunk.Idx;
+                var pos = idx.Multiple(interval);
+                pos -= new Vector3(_args.ChunkLength / 2f, 0, _args.ChunkLength / 2f);
+        
+                if(_chunkMeshStore.TryGetValue(idx, out var value))
+                    chunk.SetUp(value.Mesh, pos);
+            }    
         }
         
         private Vector3Int ToChunkIdx(Vector3 pPos) {
@@ -151,12 +170,25 @@ namespace MapGenerator {
             _args = new MapGenerationArgs(pOctave: 2);
             var chunkParent = new GameObject("Chunks");
             _chunkParent = chunkParent.transform;
+
             Init();
+            for(int i = 0; i < 8; i++)
+                Task.Run(GetMeshData);
         }
-        
+
         private void Update() {
-            ChunkRefresh();
-            ChunkPoolGenerator();
+
+            if (_player == null && _generateMeshPosQueue.Count == 0)
+                SpawnPlayer();
+            
+            while (_meshDataQueue.Count != 0) {
+                if(_meshDataQueue.TryDequeue(out var value))
+                    RegisterMesh(value);
+            }
+            LoadAllMesh();
+            
+            if(_player != null)
+                ChunkRefresh();
         }
     }
 }
