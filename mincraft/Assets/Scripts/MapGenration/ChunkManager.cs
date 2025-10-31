@@ -28,7 +28,8 @@ namespace MapGenerator {
         private Vector3Int _playerChunk;
         private Chunk[,] _chunks = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
         private Chunk[,] _temp = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
-        private readonly Queue<(Vector3, Chunk)> _pool = new((2 * SIZE + 1) * (2 * SIZE + 1));
+        private readonly Queue<(Vector3, Chunk)> _objectPool = new((2 * SIZE + 1) * (2 * SIZE + 1));
+        
         private readonly Dictionary<Vector3, (Mesh Mesh, Block[,,] Map)> _chunkMeshStore = new();
         private readonly Queue<Vector3> _chunkStoreHistory = new();
         
@@ -41,10 +42,6 @@ namespace MapGenerator {
             var interval = new Vector3(_args.ChunkLength, 0, _args.ChunkLength);
             for (int i = -SIZE; i <= SIZE; i++) {
                 for (int j = -SIZE; j <= SIZE; j++) {
-                    var pos = interval;
-                    pos.z *= i;
-                    pos.x *= j;
-                    
                     var chunk = Instantiate(_chunkPrefab, _chunkParent);
                     chunk.Ready(new(j, 0, i));
                     _chunks[i + SIZE,j + SIZE] = GenerateMesh(chunk);
@@ -91,7 +88,7 @@ namespace MapGenerator {
                     _temp[i, j] = targetChunk;
                     
                     targetChunk.Ready(pos);
-                    _pool.Enqueue((pos, targetChunk));
+                    _objectPool.Enqueue((pos, targetChunk));
                 }
             }
 
@@ -100,11 +97,11 @@ namespace MapGenerator {
 
         private void ChunkPoolGenerator() {
 
-            if (_pool.Count == 0)
+            if (_objectPool.Count == 0)
                 return;
             
             while (true) {
-                var top = _pool.Dequeue();
+                var top = _objectPool.Dequeue();
                 if (top.Item1 != top.Item2.Idx)
                     continue;
 

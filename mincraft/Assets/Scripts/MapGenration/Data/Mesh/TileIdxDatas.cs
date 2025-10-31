@@ -6,23 +6,21 @@ using Newtonsoft.Json.Converters;
 using UnityEngine;
 
 namespace MapGenerator.Tile {
-
-    public enum FaceType {
-        Up,
-        Side,
-        Down,
-    };
-    
-    public class BlockInfo {
-        [JsonConverter(typeof(StringEnumConverter))]
-        public FaceType Dir { get; set; }
-        public int PosX { get; set; }
-        public int PosY { get; set; }
-    }
-    
     
     public static class TileIdxData {
-
+        public enum FaceType {
+            Up,
+            Side,
+            Down,
+        };
+    
+        public class BlockInfo {
+            [JsonConverter(typeof(StringEnumConverter))]
+            public FaceType Dir { get; set; }
+            public int PosX { get; set; }
+            public int PosY { get; set; }
+        }
+        
         private static BlockInfo[][] posInfos = null;
 
         public static (int X, int Y) Get(Block pBlock, FaceType pFaceType) {

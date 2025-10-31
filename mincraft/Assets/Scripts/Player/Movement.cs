@@ -5,7 +5,11 @@ namespace MapGenerator.Player {
     [RequireComponent(typeof(Rigidbody))]
     public class Movement: MonoBehaviour {
 
-        //peekTime = 0.3 = 1.3 => gravityScale = -28.8888..., jumpScale = 8.666...
+        [SerializeField] private ScriptableInputSetting _inputSetting;   
+        
+        //peekTime = 0.3, maxHeight = 1.3 => gravityScale = -28.8888..., jumpScale = 8.666...
+        // j = 2h / t, g = -j / t
+        
         private const float JUMP_SCALE = 8.66f;
         private const float CONTACT_RANGE = 0.05f;
         private const float SPEED = 6f;
@@ -18,25 +22,7 @@ namespace MapGenerator.Player {
         private bool E_isStop = false;
 #endif
         
-        private void Awake() {
-            _rigidbody = GetComponent<Rigidbody>();
-            _camera = Camera.main!;
-        }
-
-        private void Update() {
-            
-            CameraUpdate();
-            var delta = InputDelta();
-            var velocity = _rigidbody.velocity;
-            (velocity.x, velocity.z) = (delta.x, delta.z);
-            
-            if (_isGround && Input.GetKeyDown(InputSetting.Jump))
-                velocity.y += JUMP_SCALE;
-
-            _rigidbody.velocity = velocity;
-            GroundCheck();
-        }
-
+       //==================================================||Medhods 
         private void GroundCheck() {
             var pos = transform.position;
             pos.y -= transform.localScale.y * 0.5f;
@@ -46,13 +32,13 @@ namespace MapGenerator.Player {
             _isGround = groundCount != 0;
         }
         
-        private Vector3 InputDelta() {
+        private Vector3 InputPostProcessing() {
             var rotation = transform.rotation;
-            var direction = InputSetting.GetDirection();
-
+            var direction = _inputSetting.InputDirection;
             
             var delta = SPEED * (rotation * direction);
-            
+         
+            //wall push prevent
             var pos = transform.position + 0.5f * (rotation * direction.Multiple(transform.localScale));
             var scale = transform.localScale * 0.49f;
             scale.z = CONTACT_RANGE;
@@ -80,6 +66,26 @@ namespace MapGenerator.Player {
             transform.rotation = Quaternion.Euler(rotation);
         }
 
+       //==================================================||Unity 
+        private void Awake() {
+            _rigidbody = GetComponent<Rigidbody>();
+            _camera = Camera.main!;
+        }
+
+        private void Update() {
+            
+            CameraUpdate();
+            var delta = InputPostProcessing();
+            var velocity = _rigidbody.velocity;
+            (velocity.x, velocity.z) = (delta.x, delta.z);
+            
+            if (_isGround && _inputSetting.IsJumpStart)
+                velocity.y += JUMP_SCALE;
+
+            _rigidbody.velocity = velocity;
+            GroundCheck();
+        }
+        
         private void OnDrawGizmos() {
             
             Gizmos.matrix = Matrix4x4.TRS(transform.position, transform.rotation, transform.lossyScale);

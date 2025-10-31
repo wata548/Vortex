@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Extension;
 using MapGenerator.Tile;
@@ -8,7 +7,7 @@ using UnityEngine;
 using FaceType = MapGenerator.Tile.TileIdxData.FaceType;
 
 namespace MapGenerator {
-    public partial class MapMeshGenerator {
+    public class MapMeshGenerator2 {
 
         public static readonly Vector3[] UP_FACE_PIVOTS;
         public static readonly Vector3[] DOWN_FACE_PIVOTS;
@@ -18,7 +17,7 @@ namespace MapGenerator {
         public static readonly Vector3[] BEHIND_FACE_PIVOTS;
         public static readonly int[] TRIANGLE_PIVOTS = { 0, 1, 2, 0, 2, 3 };
         
-        static MapMeshGenerator() {
+        static MapMeshGenerator2() {
             UP_FACE_PIVOTS = new Vector3[] { new(0, 1, 1), new(1, 1, 1), new(1, 1, 0), new(0, 1, 0) };
             DOWN_FACE_PIVOTS = new Vector3[] { new(1, 0, 0), new(1, 0, 1), new(0, 0, 1), new(0, 0, 0) };
             FRONT_FACE_PIVOTS = new Vector3[] { new(0, 1, 0), new(1, 1, 0), new(1, 0, 0), new(0, 0, 0) };
@@ -27,9 +26,10 @@ namespace MapGenerator {
             RIGHT_FACE_PIVOTS = new Vector3[] { new(1, 1, 0), new(1, 1, 1), new(1, 0, 1), new(1, 0, 0) };
         }
         
-        public (Mesh, Block[,,]) Generate(MapGenerationArgs pArgs, Vector3 pOrigin) {
-            var mesh = new Mesh();
+        public MeshData Generate(MapGenerationArgs pArgs, Vector3 pOrigin) {
+            var mesh = new MeshData();
             pOrigin -= new Vector3(pArgs.Interval, 0, pArgs.Interval);
+            
             var perlinMap = PerlinMapGeneration(pArgs, pOrigin, pArgs.CaveRange);
             var (limitX, limitY, limitZ) = (perlinMap.GetLength(0), perlinMap.GetLength(1), perlinMap.GetLength(2));
             var visitCheck = new CheckDirection[limitX, limitY, limitZ];
@@ -74,13 +74,11 @@ namespace MapGenerator {
                 }
             }
 
-            mesh.vertices = vertices.ToArray();
-            mesh.SetUVs(0, uvs);
-            mesh.triangles = triangles.ToArray();
-            
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            return (mesh, perlinMap);
+            mesh.Vertices = vertices;
+            mesh.Uvs = uvs;
+            mesh.Triangles = triangles;
+            mesh.Map = perlinMap;
+            return mesh;
 
             #region SubMethods
 
@@ -262,6 +260,32 @@ namespace MapGenerator {
             }
             
             #endregion
+        }    
+        private Block[,,] PerlinMapGeneration(MapGenerationArgs pArgs, Vector3 pOrigin, float pCaveRange) {
+            var noise = new PerLinNoise(pArgs.Seed);
+            var map = new Block[pArgs.ChunkLength + 2, pArgs.ChunkHeight, pArgs.ChunkLength + 2];
+
+            for (int z = 0; z < pArgs.ChunkLength + 2; z++) {
+                for (int x = 0; x < pArgs.ChunkLength + 2; x++) {
+                    var heightMapPos = new Vector2(x * pArgs.Interval, z * pArgs.Interval) + new Vector2(pOrigin.x, pOrigin.z);
+                    var height = pArgs.BaseHeight + Mathf.FloorToInt(
+                        (noise.Get(heightMapPos, pArgs.Octave) + 1) * pArgs.HeightLimit / 2
+                    );
+
+                    for (int y = 0; y < height; y++) {
+
+                        var pos = new Vector3(x * pArgs.Interval, y * pArgs.Interval, z * pArgs.Interval) + pOrigin;
+                        var isAir = pCaveRange <= noise.Get(pos, pArgs.Octave);
+                        map[x, y, z] = isAir 
+                            ? Block.Air 
+                            : y == height - 1 
+                                ? Block.Grass
+                                : Block.Stone;
+                    }
+                }
+            }
+
+            return map;
         }
     }
 }

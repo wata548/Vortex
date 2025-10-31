@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Extension;
 using MapGenerator;
 using MapGenerator.Tile;
 using UnityEngine;
+using FaceType = MapGenerator.Tile.TileIdxData.FaceType;
 
 namespace Test {
     [RequireComponent(typeof(MeshRenderer))]
