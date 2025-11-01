@@ -4,6 +4,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using UnityEngine;
+using Object = System.Object;
 
 namespace MapGenerator.Tile {
     
@@ -14,7 +15,7 @@ namespace MapGenerator.Tile {
             Down,
         };
     
-        public class BlockInfo {
+        private class BlockInfo {
             [JsonConverter(typeof(StringEnumConverter))]
             public FaceType Dir { get; set; }
             public int PosX { get; set; }
@@ -22,9 +23,15 @@ namespace MapGenerator.Tile {
         }
         
         private static BlockInfo[][] posInfos = null;
+        private static bool isInited = false;
+        private static readonly object _lock = new();
 
         public static (int X, int Y) Get(Block pBlock, FaceType pFaceType) {
-            SettUp();
+
+            lock (_lock) {
+                SettUp();
+            }
+
             var temp = posInfos[(int)pBlock].FirstOrDefault(info => info.Dir == pFaceType);
             temp ??= posInfos[(int)pBlock][0];
             return new(temp.PosX, temp.PosY);
@@ -32,8 +39,9 @@ namespace MapGenerator.Tile {
             
         private static void SettUp() {
 
-            if (posInfos != null)
-                return; 
+            if (posInfos != null || isInited)
+                return;    
+            isInited = true;
             
             var rawData = JsonConvert.DeserializeObject<Dictionary<string, BlockInfo[]>>(
                 Resources.Load<TextAsset>("TileData").text

@@ -263,7 +263,7 @@ namespace MapGenerator {
         }
         public MeshData Generate(MapGenerationArgs pArgs, Vector3Int pPos) {
             var mesh = new MeshData();
-            var startPos = pPos - new Vector3(pArgs.Interval, 0, pArgs.Interval);
+            var startPos = pPos * pArgs.ChunkRange - new Vector3(pArgs.Interval, 0, pArgs.Interval);
             
             var perlinMap = PerlinMapGeneration(pArgs, startPos);
             return Generate(perlinMap, pPos);

@@ -1,6 +1,8 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace MapGenerator {
+    [Serializable]
     public struct MapGenerationArgs {
         public int BaseHeight;
         public int HeightLimit;

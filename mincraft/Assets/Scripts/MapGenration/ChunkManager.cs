@@ -1,5 +1,7 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Extension;
@@ -19,17 +21,19 @@ namespace MapGenerator {
     public class ChunkManager: MonoBehaviour {
         
         //==================================================||Constants 
-        private const int SIZE = 4;
+        private const int SIZE = 3;
         private const int MESH_RESTORE_LIMIT = 1200;
         private static readonly Vector3 CAMERA_LOCAL_POS = new(0, 0.25f, 0);
         
         //==================================================||Fields 
+        [SerializeField]private int _threadCnt = 4;
+        
         [SerializeField] private Chunk _chunkPrefab;
         [SerializeField] private GameObject _playerPrefab;
         private GameObject _player = null;
         
         private MapMeshGenerator _generator;
-        private MapGenerationArgs _args;
+        [SerializeField] private MapGenerationArgs _args = new(pOctave:2);
         private Transform _chunkParent;
         private Vector3Int _playerChunk;
         private Chunk[,] _chunks = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
@@ -40,7 +44,8 @@ namespace MapGenerator {
         
         private readonly Dictionary<Vector3Int, (Mesh Mesh, Block[,,] Map)> _chunkMeshStore = new();
         private readonly Queue<Vector3Int> _chunkStoreHistory = new();
-        
+
+        private bool _isQuit = false;
         //==================================================||Methods 
 
         private void SpawnPlayer() {
@@ -117,7 +122,13 @@ namespace MapGenerator {
         }
 
         private Task GetMeshData() {
+            lock (_temp) {
+                Thread.Sleep(3);
+            }
             while (true) {
+                if (_isQuit)
+                    return null;
+                
                 if(!_generateMeshPosQueue.TryDequeue(out var target))
                     continue;
                 if(_chunkMeshStore.ContainsKey(target))
@@ -164,31 +175,64 @@ namespace MapGenerator {
         }
         
         //==================================================||Unity 
+        
         private void Awake() {
             
             _generator = new MapMeshGenerator();
-            _args = new MapGenerationArgs(pOctave: 2);
             var chunkParent = new GameObject("Chunks");
             _chunkParent = chunkParent.transform;
 
             Init();
-            for(int i = 0; i < 8; i++)
+#if UNITY_EDITOR
+            _tasks = new Task[_threadCnt];
+            for (int i = 0; i < _threadCnt; i++) {
+                _tasks[i] = Task.Run(GetMeshData);
+            }
+#else
+            for (int i = 0; i < _threadCnt; i++) {
                 Task.Run(GetMeshData);
+            }
+#endif
+            
         }
-
+        
         private void Update() {
 
+#if UNITY_EDITOR
+            Log();
+#endif
+            
             if (_player == null && _generateMeshPosQueue.Count == 0)
                 SpawnPlayer();
             
             while (_meshDataQueue.Count != 0) {
-                if(_meshDataQueue.TryDequeue(out var value))
+                if (_meshDataQueue.TryDequeue(out var value)) {
+                    Debug.Log($"Bake: {value}");
                     RegisterMesh(value);
+                }
             }
             LoadAllMesh();
             
             if(_player != null)
                 ChunkRefresh();
         }
+        
+        private void OnApplicationQuit() {
+            _isQuit = true;
+        }
+        
+        #if UNITY_EDITOR
+        private Task[] _tasks;
+
+        private void Log() {
+            int idx = 0;
+            foreach (var task in _tasks) {
+                idx++;
+                if(task.Status == TaskStatus.Faulted)
+                    Debug.Log($"{idx}: {task.Exception}");
+            }    
+        }
+        
+        #endif
     }
 }
