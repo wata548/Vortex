@@ -207,7 +207,7 @@ namespace MapGenerator {
             
             while (_meshDataQueue.Count != 0) {
                 if (_meshDataQueue.TryDequeue(out var value)) {
-                    Debug.Log($"Bake: {value}");
+                    Debug.Log($"Bake: {value.Idx}");
                     RegisterMesh(value);
                 }
             }
