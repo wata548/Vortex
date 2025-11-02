@@ -356,8 +356,8 @@ MonoBehaviour:
   _chunkPrefab: {fileID: 1814877149898253542, guid: 5d03a96fe93c0a542a9f01b994117b9d, type: 3}
   _playerPrefab: {fileID: 8208665262034983803, guid: be9bbba0c20386a4fa752b39bcdac7c2, type: 3}
   _args:
-    BaseHeight: 16
-    HeightLimit: 8
+    BaseHeight: 64
+    HeightLimit: 16
     Seed: 181818
     ChunkRange: 1
     Octave: 1

@@ -11,7 +11,7 @@ namespace MapGenerator {
         public int Octave;
         public float Interval;
         public float CaveRange;
-
+        
         public int ChunkLength => (int)(ChunkRange / Interval);
         public int ChunkHeight => BaseHeight + HeightLimit;
 

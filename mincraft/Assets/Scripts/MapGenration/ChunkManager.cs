@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Extension;
+using Extension.Test;
+using TMPro;
 using UnityEngine;
 
 namespace MapGenerator {
@@ -28,26 +30,45 @@ namespace MapGenerator {
         //==================================================||Fields 
         [SerializeField]private int _threadCnt = 4;
         
+        //Prefabs
         [SerializeField] private Chunk _chunkPrefab;
         [SerializeField] private GameObject _playerPrefab;
         private GameObject _player = null;
         
+        //Generator Information
         private MapMeshGenerator _generator;
         [SerializeField] private MapGenerationArgs _args = new(pOctave:2);
         private Transform _chunkParent;
         private Vector3Int _playerChunk;
+        
+        //Current Chunk map
         private Chunk[,] _chunks = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
         private Chunk[,] _temp = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
 
+        //new chunks load - Multi Thread
         private readonly ConcurrentQueue<Vector3Int> _generateMeshPosQueue = new();
         private readonly ConcurrentQueue<MeshData> _meshDataQueue = new();
         
+        //Emergency Load targets - Single Thread
+        private readonly ConcurrentStack<Vector3Int> _emergencyGenerateMeshPosStack = new();
+        private readonly ConcurrentStack<MeshData> _emergencyMeshDataStack = new();
+        
+        //Chunk store
         private readonly Dictionary<Vector3Int, (Mesh Mesh, Block[,,] Map)> _chunkMeshStore = new();
         private readonly Queue<Vector3Int> _chunkStoreHistory = new();
 
         private bool _isQuit = false;
         //==================================================||Methods 
 
+        [TestMethod]
+        private void Test() {
+            var pos = _chunks[SIZE, SIZE].Idx;
+            for (int i = 0; i < _chunkMeshStore[pos].Map.GetLength(2); i++) {
+                _chunkMeshStore[pos].Map[i, 0, i] = Block.Air;
+            }
+            _emergencyGenerateMeshPosStack.Push(pos);
+        }
+        
         private void SpawnPlayer() {
             _player = Instantiate(_playerPrefab);
             
@@ -139,6 +160,20 @@ namespace MapGenerator {
                 Thread.Sleep(1);
             }
         }
+        private Task GetEmergencyMeshData() {
+            while (true) {
+                if (_isQuit)
+                    return null;
+                        
+                if(!_emergencyGenerateMeshPosStack.TryPop(out var target))
+                    continue;
+
+                var data = _chunkMeshStore[target].Map;
+                _emergencyMeshDataStack.Push(_generator.Generate(data, target));
+                Thread.Sleep(1);
+            }
+        }
+        
 
         private void RegisterMesh(MeshData pData) {
             var mesh = new Mesh();
@@ -183,6 +218,7 @@ namespace MapGenerator {
             _chunkParent = chunkParent.transform;
 
             Init();
+            Task.Run(GetEmergencyMeshData);
 #if UNITY_EDITOR
             _tasks = new Task[_threadCnt];
             for (int i = 0; i < _threadCnt; i++) {
@@ -204,6 +240,13 @@ namespace MapGenerator {
             
             if (_player == null && _generateMeshPosQueue.Count == 0)
                 SpawnPlayer();
+            
+            while (_emergencyMeshDataStack.Count != 0) {
+                if (_emergencyMeshDataStack.TryPop(out var value)) {
+                    Debug.Log($"refresh: {value.Idx}");
+                    RegisterMesh(value);
+                }
+            }
             
             while (_meshDataQueue.Count != 0) {
                 if (_meshDataQueue.TryDequeue(out var value)) {

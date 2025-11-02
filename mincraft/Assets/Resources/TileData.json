@@ -1,5 +1,8 @@
 ﻿{
   "Air": [],
+  "Base": [
+    {"Dir": "Up", "PosX": 15, "PosY": 15}
+  ],
   "Grass": [
     {"Dir": "Up",  "PosX": 0, "PosY": 0},
     {"Dir": "Side",  "PosX": 1, "PosY": 0},

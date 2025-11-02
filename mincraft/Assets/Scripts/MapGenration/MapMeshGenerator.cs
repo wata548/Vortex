@@ -5,6 +5,7 @@ using Extension;
 using MapGenerator.Tile;
 using UnityEngine;
 using FaceType = MapGenerator.Tile.TileIdxData.FaceType;
+using Random = System.Random;
 
 namespace MapGenerator {
 
@@ -262,7 +263,6 @@ namespace MapGenerator {
              #endregion           
         }
         public MeshData Generate(MapGenerationArgs pArgs, Vector3Int pPos) {
-            var mesh = new MeshData();
             var startPos = pPos * pArgs.ChunkRange - new Vector3(pArgs.Interval, 0, pArgs.Interval);
             
             var perlinMap = PerlinMapGeneration(pArgs, startPos);
@@ -272,7 +272,7 @@ namespace MapGenerator {
         private Block[,,] PerlinMapGeneration(MapGenerationArgs pArgs, Vector3 pOrigin) {
             var noise = new PerLinNoise(pArgs.Seed);
             var map = new Block[pArgs.ChunkLength + 2, pArgs.ChunkHeight, pArgs.ChunkLength + 2];
-
+            
             for (int z = 0; z < pArgs.ChunkLength + 2; z++) {
                 for (int x = 0; x < pArgs.ChunkLength + 2; x++) {
                     var heightMapPos = new Vector2(x * pArgs.Interval, z * pArgs.Interval) + new Vector2(pOrigin.x, pOrigin.z);
@@ -280,8 +280,15 @@ namespace MapGenerator {
                         (noise.Get(heightMapPos, pArgs.Octave) + 1) * pArgs.HeightLimit / 2
                     );
 
+                    var r = new Random((pArgs.Seed * x) ^ z);
+                    var baseBlockCnt = r.Next(0, 5);
                     for (int y = 0; y < height; y++) {
 
+                        if (y <= baseBlockCnt) {
+                            map[x, y, z] = Block.Base;
+                            continue;
+                        }
+                        
                         var pos = new Vector3(x * pArgs.Interval, y * pArgs.Interval, z * pArgs.Interval) + pOrigin;
                         var isAir = pArgs.CaveRange <= noise.Get(pos, pArgs.Octave);
                         map[x, y, z] = isAir 
