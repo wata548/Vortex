@@ -46,8 +46,8 @@ namespace MapGenerator {
         private Chunk[,] _temp = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
 
         //new chunks load - Multi Thread
-        private readonly ConcurrentQueue<Vector3Int> _generateMeshPosQueue = new();
-        private readonly ConcurrentQueue<MeshData> _meshDataQueue = new();
+        private readonly ConcurrentStack<Vector3Int> _generateMeshPosStack = new();
+        private readonly ConcurrentStack<MeshData> _meshDataStack = new();
         
         //Emergency Load targets - Single Thread
         private readonly ConcurrentStack<Vector3Int> _emergencyGenerateMeshPosStack = new();
@@ -89,7 +89,7 @@ namespace MapGenerator {
                     var idx = new Vector3Int(j, 0, i);
                     
                     chunk.Ready(idx);
-                    _generateMeshPosQueue.Enqueue(idx);
+                    _generateMeshPosStack.Push(idx);
                     
                     _chunks[i + SIZE,j + SIZE] = chunk;
                 }
@@ -135,7 +135,7 @@ namespace MapGenerator {
                     _temp[i, j] = targetChunk;
                     
                     targetChunk.Ready(pos);
-                    _generateMeshPosQueue.Enqueue((pos));
+                    _generateMeshPosStack.Push((pos));
                 }
             }
 
@@ -150,13 +150,13 @@ namespace MapGenerator {
                 if (_isQuit)
                     return null;
                 
-                if(!_generateMeshPosQueue.TryDequeue(out var target))
+                if(!_generateMeshPosStack.TryPop(out var target))
                     continue;
                 if(_chunkMeshStore.ContainsKey(target))
                     continue;
 
                 _chunkMeshStore.Add(target, (null, null));
-                _meshDataQueue.Enqueue(_generator.Generate(_args, target));
+                _meshDataStack.Push(_generator.Generate(_args, target));
                 Thread.Sleep(1);
             }
         }
@@ -238,7 +238,7 @@ namespace MapGenerator {
             Log();
 #endif
             
-            if (_player == null && _generateMeshPosQueue.Count == 0)
+            if (_player == null && _generateMeshPosStack.Count == 0)
                 SpawnPlayer();
             
             while (_emergencyMeshDataStack.Count != 0) {
@@ -248,8 +248,8 @@ namespace MapGenerator {
                 }
             }
             
-            while (_meshDataQueue.Count != 0) {
-                if (_meshDataQueue.TryDequeue(out var value)) {
+            while (_meshDataStack.Count != 0) {
+                if (_meshDataStack.TryPop(out var value)) {
                     Debug.Log($"Bake: {value.Idx}");
                     RegisterMesh(value);
                 }
