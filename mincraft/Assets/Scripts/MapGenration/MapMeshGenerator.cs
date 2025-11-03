@@ -34,8 +34,8 @@ namespace MapGenerator {
             var (limitX, limitY, limitZ) = (pMap.GetLength(0), pMap.GetLength(1), pMap.GetLength(2));
             var visitCheck = new CheckDirection[limitX, limitY, limitZ];
  
-            var triangles = new List<int>();
-            var vertices = new List<Vector3>();
+            var triangles = new List<int>(1500);
+            var vertices = new List<Vector3>(1500);
             var uvs = new List<Vector4>();
              
             for (int y = 0; y < limitY; y++) {
@@ -46,28 +46,28 @@ namespace MapGenerator {
  
                         //generate direction mesh
                         GenerateX(LEFT_FACE_PIVOTS, CheckDirection.Left,
-                            (x, y, z) => z == 0 || z == limitZ - 1 || x == 0 || pMap[x - 1, y, z] != Block.Air, 
+                            (x, y, z) => z == limitZ - 1 || x == 0 || pMap[x - 1, y, z] != Block.Air, 
                             x, y, z, FaceType.Side
                         );
                         GenerateX(RIGHT_FACE_PIVOTS, CheckDirection.Right,
-                            (x, y, z) => z == 0 || z == limitZ - 1 || x == limitX - 1 || pMap[x + 1, y, z] != Block.Air, 
+                            (x, y, z) => z == limitZ - 1 || x == limitX - 1 || pMap[x + 1, y, z] != Block.Air, 
                             x, y, z, FaceType.Side
                         );
                          
                         GenerateY(UP_FACE_PIVOTS, CheckDirection.Up,
-                            (x, y, z) =>  x == 0 || z == 0 || x == limitX - 1 || z == limitZ - 1 || y != limitY - 1 && pMap[x, y + 1, z] != Block.Air,
+                            (x, y, z) =>  x == limitX - 1 || z == limitZ - 1 || y != limitY - 1 && pMap[x, y + 1, z] != Block.Air,
                             x, y, z, FaceType.Up
                         );
                         GenerateY(DOWN_FACE_PIVOTS, CheckDirection.Down,
-                            (x, y, z) => x == 0 || z == 0 || x == limitX - 1 || z == limitZ - 1 || y != 0  && pMap[x, y - 1, z] != Block.Air, 
+                            (x, y, z) => x == limitX - 1 || z == limitZ - 1 || y != 0  && pMap[x, y - 1, z] != Block.Air, 
                             x, y, z, FaceType.Down
                         );
                         GenerateZ(FRONT_FACE_PIVOTS, CheckDirection.Front,
-                            (x, y, z) => x == 0 || x == limitX - 1 || z == 0 || pMap[x, y, z - 1] != Block.Air, 
+                            (x, y, z) => x == limitX - 1 || z == 0 || pMap[x, y, z - 1] != Block.Air, 
                             x, y, z, FaceType.Side
                         );
                         GenerateZ(BEHIND_FACE_PIVOTS, CheckDirection.Behind,
-                            (x, y, z) => x == 0 || x == limitX - 1 || z == limitZ - 1 || pMap[x, y, z + 1] != Block.Air, 
+                            (x, y, z) => x == limitX - 1 || z == limitZ - 1 || pMap[x, y, z + 1] != Block.Air, 
                             x, y, z, FaceType.Side
                         );
                     }
@@ -262,19 +262,16 @@ namespace MapGenerator {
              
             #endregion           
         }
-        public MeshData Generate(MapGenerationArgs pArgs, Vector3Int pPos) {
-            var startPos = pPos * pArgs.ChunkRange - new Vector3(pArgs.Interval, 0, pArgs.Interval);
-            
-            var perlinMap = PerlinMapGeneration(pArgs, startPos);
-            return Generate(perlinMap, pPos);
-        }    
         
-        private Block[,,] PerlinMapGeneration(MapGenerationArgs pArgs, Vector3 pOrigin) {
-            var noise = new PerLinNoise(pArgs.Seed);
-            var map = new Block[pArgs.ChunkLength + 2, pArgs.ChunkHeight, pArgs.ChunkLength + 2];
+        public Block[,,] PerlinMapGeneration(MapGenerationArgs pArgs, Vector3 pOrigin) {
+            pOrigin *= pArgs.ChunkRange;
             
-            for (int z = 0; z < pArgs.ChunkLength + 2; z++) {
-                for (int x = 0; x < pArgs.ChunkLength + 2; x++) {
+            var noise = new PerLinNoise(pArgs.Seed);
+            var noise2 = new FastNoiseLite(pArgs.Seed);
+            var map = new Block[pArgs.ChunkLength + 1, pArgs.ChunkHeight, pArgs.ChunkLength + 1];
+            
+            for (int z = 0; z < pArgs.ChunkLength + 1; z++) {
+                for (int x = 0; x < pArgs.ChunkLength + 1; x++) {
                     var heightMapPos = new Vector2(x * pArgs.Interval, z * pArgs.Interval) + new Vector2(pOrigin.x, pOrigin.z);
                     var height = pArgs.BaseHeight + Mathf.FloorToInt(
                         (noise.Get(heightMapPos, pArgs.Octave) + 1) * pArgs.HeightLimit / 2
@@ -311,6 +308,10 @@ namespace MapGenerator {
                     }
                 }
             }
+            /*var treePosRandom = new Random((int)(pOrigin.x * 1235) ^ (int)(pOrigin.z * 531));
+            for (int i = 0; i < 10; i++) {
+                var pos = treePosRandom()
+            }*/
 
             return map;
         }

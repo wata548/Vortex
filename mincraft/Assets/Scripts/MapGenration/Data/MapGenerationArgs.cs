@@ -4,6 +4,7 @@ using UnityEngine;
 namespace MapGenerator {
     [Serializable]
     public struct MapGenerationArgs {
+        public int IntervalHeight;
         public int BaseHeight;
         public int HeightLimit;
         public int Seed;
@@ -13,9 +14,10 @@ namespace MapGenerator {
         public float CaveRange;
         
         public int ChunkLength => (int)(ChunkRange / Interval);
-        public int ChunkHeight => BaseHeight + HeightLimit;
+        public int ChunkHeight => BaseHeight + HeightLimit + IntervalHeight;
 
         public MapGenerationArgs(
+            int pIntervalHeight = 16,
             int pBaseHeight = 16,
             int pHeightLimit = 16,
             int pSeed = 181818,
@@ -24,6 +26,7 @@ namespace MapGenerator {
             int pOctave = 1,
             float pCaveRange = 0.3f
         ) {
+            IntervalHeight = pIntervalHeight;
             BaseHeight = pBaseHeight;
             HeightLimit = pHeightLimit;
             Seed = pSeed;

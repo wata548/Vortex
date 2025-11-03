@@ -8,6 +8,7 @@ using Extension;
 using Extension.Test;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MapGenerator {
     
@@ -23,12 +24,13 @@ namespace MapGenerator {
     public class ChunkManager: MonoBehaviour {
         
         //==================================================||Constants 
-        private const int SIZE = 3;
+        private const int SIZE = 5;
         private const int MESH_RESTORE_LIMIT = 1200;
         private static readonly Vector3 CAMERA_LOCAL_POS = new(0, 0.25f, 0);
         
         //==================================================||Fields 
-        [SerializeField]private int _threadCnt = 4;
+        [SerializeField]private int _meshThreadCnt = 1;
+        [SerializeField]private int _mapThreadCnt = 6;
         
         //Prefabs
         [SerializeField] private Chunk _chunkPrefab;
@@ -45,16 +47,19 @@ namespace MapGenerator {
         private Chunk[,] _chunks = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
         private Chunk[,] _temp = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
 
+        //new chunks data
+        private readonly ConcurrentStack<Vector3Int> _generateMapDataStack = new();
+        
         //new chunks load - Multi Thread
         private readonly ConcurrentStack<Vector3Int> _generateMeshPosStack = new();
         private readonly ConcurrentStack<MeshData> _meshDataStack = new();
         
-        //Emergency Load targets - Single Thread
-        private readonly ConcurrentStack<Vector3Int> _emergencyGenerateMeshPosStack = new();
-        private readonly ConcurrentStack<MeshData> _emergencyMeshDataStack = new();
+        //Rebake Load targets - Single Thread
+        private readonly ConcurrentStack<Vector3Int> _rebakeMeshPosStack = new();
+        private readonly ConcurrentStack<MeshData> _rebakeMeshDataStack = new();
         
         //Chunk store
-        private readonly Dictionary<Vector3Int, (Mesh Mesh, Block[,,] Map)> _chunkMeshStore = new();
+        private readonly ConcurrentDictionary<Vector3Int, (Mesh Mesh, Block[,,] Map)> _chunkMeshStore = new();
         private readonly Queue<Vector3Int> _chunkStoreHistory = new();
 
         private bool _isQuit = false;
@@ -66,7 +71,7 @@ namespace MapGenerator {
             for (int i = 0; i < _chunkMeshStore[pos].Map.GetLength(2); i++) {
                 _chunkMeshStore[pos].Map[i, 0, i] = Block.Air;
             }
-            _emergencyGenerateMeshPosStack.Push(pos);
+            _rebakeMeshPosStack.Push(pos);
         }
         
         private void SpawnPlayer() {
@@ -89,14 +94,14 @@ namespace MapGenerator {
                     var idx = new Vector3Int(j, 0, i);
                     
                     chunk.Ready(idx);
-                    _generateMeshPosStack.Push(idx);
+                    _generateMapDataStack.Push(idx);
                     
                     _chunks[i + SIZE,j + SIZE] = chunk;
                 }
             }
         }
         
-        private void ChunkRefresh() {
+        private void NewChunksLoad() {
             var newChunkIdx = ToChunkIdx(_player.transform.position);
             if (newChunkIdx == _playerChunk)
                 return;
@@ -135,42 +140,52 @@ namespace MapGenerator {
                     _temp[i, j] = targetChunk;
                     
                     targetChunk.Ready(pos);
-                    _generateMeshPosStack.Push((pos));
+                    _generateMapDataStack.Push((pos));
                 }
             }
 
             (_chunks, _temp) = (_temp, _chunks);
         }
 
-        private Task GetMeshData() {
-            lock (_temp) {
-                Thread.Sleep(3);
-            }
+        private Task GetMapData() {
             while (true) {
                 if (_isQuit)
                     return null;
-                
-                if(!_generateMeshPosStack.TryPop(out var target))
-                    continue;
-                if(_chunkMeshStore.ContainsKey(target))
-                    continue;
 
-                _chunkMeshStore.Add(target, (null, null));
-                _meshDataStack.Push(_generator.Generate(_args, target));
-                Thread.Sleep(1);
+                if (!_generateMapDataStack.TryPop(out var target) || _chunkMeshStore.ContainsKey(target)) {
+                    Thread.Sleep(1);
+                    continue;
+                }
+
+                _chunkMeshStore.TryAdd(target, (null, _generator.PerlinMapGeneration(_args, target)));
+                _generateMeshPosStack.Push(target);
+            }
+        } 
+        private Task GetMeshData() {
+            while (true) {
+                if (_isQuit)
+                    return null;
+
+                if (!_generateMeshPosStack.TryPop(out var target)) {
+                    Thread.Sleep(1);
+                    continue;
+                }
+
+                _meshDataStack.Push(_generator.Generate(_chunkMeshStore[target].Map, target));
             }
         }
-        private Task GetEmergencyMeshData() {
+        
+        private Task GetRebakedMeshData() {
             while (true) {
                 if (_isQuit)
                     return null;
-                        
-                if(!_emergencyGenerateMeshPosStack.TryPop(out var target))
+                if (!_rebakeMeshPosStack.TryPop(out var target)) {
+                    Thread.Sleep(1);
                     continue;
+                }
 
                 var data = _chunkMeshStore[target].Map;
-                _emergencyMeshDataStack.Push(_generator.Generate(data, target));
-                Thread.Sleep(1);
+                _rebakeMeshDataStack.Push(_generator.Generate(data, target));
             }
         }
         
@@ -211,21 +226,27 @@ namespace MapGenerator {
         
         //==================================================||Unity 
         
-        private void Awake() {
+        private void Start() {
             
             _generator = new MapMeshGenerator();
             var chunkParent = new GameObject("Chunks");
             _chunkParent = chunkParent.transform;
 
             Init();
-            Task.Run(GetEmergencyMeshData);
+            Task.Run(GetRebakedMeshData);
 #if UNITY_EDITOR
-            _tasks = new Task[_threadCnt];
-            for (int i = 0; i < _threadCnt; i++) {
-                _tasks[i] = Task.Run(GetMeshData);
+            _tasks = new Task[_meshThreadCnt + _mapThreadCnt];
+            for (int i = 0; i < _mapThreadCnt; i++) {
+                _tasks[i] = Task.Run(GetMapData);
+            }
+            for (int i = 0; i < _meshThreadCnt; i++) {
+                _tasks[_mapThreadCnt + i] = Task.Run(GetMeshData);
             }
 #else
-            for (int i = 0; i < _threadCnt; i++) {
+            for (int i = 0; i < _mapThreadCnt; i++) {
+                Task.Run(GetMapData);
+            }
+            for (int i = 0; i < _meshThreadCnt; i++) {
                 Task.Run(GetMeshData);
             }
 #endif
@@ -238,11 +259,11 @@ namespace MapGenerator {
             Log();
 #endif
             
-            if (_player == null && _generateMeshPosStack.Count == 0)
+            if (_player == null && Input.GetKeyDown(KeyCode.U))
                 SpawnPlayer();
             
-            while (_emergencyMeshDataStack.Count != 0) {
-                if (_emergencyMeshDataStack.TryPop(out var value)) {
+            while (_rebakeMeshDataStack.Count != 0) {
+                if (_rebakeMeshDataStack.TryPop(out var value)) {
                     Debug.Log($"refresh: {value.Idx}");
                     RegisterMesh(value);
                 }
@@ -257,18 +278,19 @@ namespace MapGenerator {
             LoadAllMesh();
             
             if(_player != null)
-                ChunkRefresh();
+                NewChunksLoad();
         }
         
         private void OnApplicationQuit() {
             _isQuit = true;
         }
         
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         private Task[] _tasks;
 
         private void Log() {
             int idx = 0;
+            
             foreach (var task in _tasks) {
                 idx++;
                 if(task.Status == TaskStatus.Faulted)
@@ -276,6 +298,6 @@ namespace MapGenerator {
             }    
         }
         
-        #endif
+#endif
     }
 }
