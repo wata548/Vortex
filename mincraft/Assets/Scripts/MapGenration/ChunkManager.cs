@@ -1,33 +1,20 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Extension;
 using Extension.Test;
-using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace MapGenerator {
     
-    public struct MeshData {
-
-        public Vector3Int Idx;
-        public Block[,,] Map;
-        public List<Vector4> Uvs;
-        public int[] Triangles;
-        public List<Vector3> Vertices;
-    }
-    
-    public class ChunkManager: MonoBehaviour {
+    public partial class ChunkManager: MonoSingleton<ChunkManager> {
         
         //==================================================||Constants 
         private const int SIZE = 5;
         private const int MESH_RESTORE_LIMIT = 1200;
         private static readonly Vector3 CAMERA_LOCAL_POS = new(0, 0.25f, 0);
         
+        //==================================================||Properties 
+        protected override bool IsNarrowSingleton { get; set; } = true;
         //==================================================||Fields 
         [SerializeField]private int _meshThreadCnt = 1;
         [SerializeField]private int _mapThreadCnt = 6;
@@ -46,32 +33,31 @@ namespace MapGenerator {
         //Current Chunk map
         private Chunk[,] _chunks = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
         private Chunk[,] _temp = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
-
-        //new chunks data
-        private readonly ConcurrentStack<Vector3Int> _generateMapDataStack = new();
         
-        //new chunks load - Multi Thread
-        private readonly ConcurrentStack<Vector3Int> _generateMeshPosStack = new();
-        private readonly ConcurrentStack<MeshData> _meshDataStack = new();
-        
-        //Rebake Load targets - Single Thread
-        private readonly ConcurrentStack<Vector3Int> _rebakeMeshPosStack = new();
-        private readonly ConcurrentStack<MeshData> _rebakeMeshDataStack = new();
-        
-        //Chunk store
-        private readonly ConcurrentDictionary<Vector3Int, (Mesh Mesh, Block[,,] Map)> _chunkMeshStore = new();
-        private readonly Queue<Vector3Int> _chunkStoreHistory = new();
-
         private bool _isQuit = false;
         //==================================================||Methods 
 
         [TestMethod]
         private void Test() {
             var pos = _chunks[SIZE, SIZE].Idx;
-            for (int i = 0; i < _chunkMeshStore[pos].Map.GetLength(2); i++) {
-                _chunkMeshStore[pos].Map[i, 0, i] = Block.Air;
+            for (int i = 0; i < _chunkDataStore[pos].Map.GetLength(2); i++) {
+                _chunkDataStore[pos].Map[i, 0, i] = Block.Air;
             }
             _rebakeMeshPosStack.Push(pos);
+        }
+
+        public bool GetMapData(Vector3 pPos, out Block[,,] pMap) =>
+            GetMapData(ToChunkIdx(pPos), out pMap);
+        
+        public bool GetMapData(Vector3Int pPos, out Block[,,] pMap) {
+            if (!_chunkDataStore.TryGetValue(pPos, out var info)) {
+                pMap = null;
+                _generateMapDataStack.Push(pPos);
+                return false;
+            }
+
+            pMap = info.Map;
+            return true;
         }
         
         private void SpawnPlayer() {
@@ -100,7 +86,7 @@ namespace MapGenerator {
                 }
             }
         }
-        
+
         private void NewChunksLoad() {
             var newChunkIdx = ToChunkIdx(_player.transform.position);
             if (newChunkIdx == _playerChunk)
@@ -146,74 +132,6 @@ namespace MapGenerator {
 
             (_chunks, _temp) = (_temp, _chunks);
         }
-
-        private Task GetMapData() {
-            while (true) {
-                if (_isQuit)
-                    return null;
-
-                if (!_generateMapDataStack.TryPop(out var target) || _chunkMeshStore.ContainsKey(target)) {
-                    Thread.Sleep(1);
-                    continue;
-                }
-
-                _chunkMeshStore.TryAdd(target, (null, _generator.PerlinMapGeneration(_args, target)));
-                _generateMeshPosStack.Push(target);
-            }
-        } 
-        private Task GetMeshData() {
-            while (true) {
-                if (_isQuit)
-                    return null;
-
-                if (!_generateMeshPosStack.TryPop(out var target)) {
-                    Thread.Sleep(1);
-                    continue;
-                }
-
-                _meshDataStack.Push(_generator.Generate(_chunkMeshStore[target].Map, target));
-            }
-        }
-        
-        private Task GetRebakedMeshData() {
-            while (true) {
-                if (_isQuit)
-                    return null;
-                if (!_rebakeMeshPosStack.TryPop(out var target)) {
-                    Thread.Sleep(1);
-                    continue;
-                }
-
-                var data = _chunkMeshStore[target].Map;
-                _rebakeMeshDataStack.Push(_generator.Generate(data, target));
-            }
-        }
-        
-
-        private void RegisterMesh(MeshData pData) {
-            var mesh = new Mesh();
-            mesh.SetVertices(pData.Vertices);
-            mesh.triangles = pData.Triangles;
-            mesh.SetUVs(0, pData.Uvs);
-            mesh.RecalculateBounds();
-            mesh.RecalculateNormals();
-            
-            _chunkStoreHistory.Enqueue(pData.Idx);
-            _chunkMeshStore[pData.Idx] = (mesh, pData.Map);
-        }
-
-        private void LoadAllMesh() {
-            var interval = new Vector3(_args.ChunkLength, 0, _args.ChunkLength);
-                    
-            foreach (var chunk in _chunks) {
-                var idx = chunk.Idx;
-                var pos = idx.Multiple(interval);
-                pos -= new Vector3(_args.ChunkLength / 2f, 0, _args.ChunkLength / 2f);
-        
-                if(_chunkMeshStore.TryGetValue(idx, out var value))
-                    chunk.SetUp(value.Mesh, pos);
-            }    
-        }
         
         private Vector3Int ToChunkIdx(Vector3 pPos) {
             var x = pPos.x / _args.ChunkLength;
@@ -254,7 +172,8 @@ namespace MapGenerator {
         }
         
         private void Update() {
-
+            base.Update();
+            
 #if UNITY_EDITOR
             Log();
 #endif
