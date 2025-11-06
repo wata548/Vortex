@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Extension;
+using UnityEngine;
 
 namespace MapGenerator {
     [RequireComponent(typeof(MeshFilter))]
@@ -22,6 +23,27 @@ namespace MapGenerator {
             
             meshFilter.mesh = pMesh;
             meshCollider.sharedMesh = pMesh;    
+        }
+        
+        public static Vector3Int GetChunkIdx(MapGenerationArgs pArgs, Vector3 pPos) {
+            var x = pPos.x / pArgs.ChunkLength;
+            x = x.Sign() * (Mathf.Abs(x) + 0.5f);
+            var z = pPos.z / pArgs.ChunkLength;
+            z = z.Sign() * (Mathf.Abs(z) + 0.5f);
+
+            return new((int)x, 0, (int)z);
+        }
+        
+        public static Vector3 GetChunkLocalPos(MapGenerationArgs pArgs, Vector3 pPos) {
+            var chunk = GetChunkIdx(pArgs, pPos);
+            var temp = Vector3.zero;
+            
+            temp.x = chunk.x - 0.5f;
+            temp.z = chunk.z - 0.5f;
+            temp *= pArgs.ChunkLength;
+            pPos -= temp;
+            
+            return pPos;
         }
         
     }

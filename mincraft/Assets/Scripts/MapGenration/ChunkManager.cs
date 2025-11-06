@@ -1,15 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Extension;
 using Extension.Test;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MapGenerator {
     
     public partial class ChunkManager: MonoSingleton<ChunkManager> {
         
         //==================================================||Constants 
-        private const int SIZE = 5;
+        private const int SIZE = 1;
         private const int MESH_RESTORE_LIMIT = 1200;
         private static readonly Vector3 CAMERA_LOCAL_POS = new(0, 0.25f, 0);
         
@@ -22,13 +24,14 @@ namespace MapGenerator {
         //Prefabs
         [SerializeField] private Chunk _chunkPrefab;
         [SerializeField] private GameObject _playerPrefab;
-        private GameObject _player = null;
+        public GameObject Player { get; private set; } = null;
         
         //Generator Information
         private MapMeshGenerator _generator;
         [SerializeField] private MapGenerationArgs _args = new(pOctave:2);
         private Transform _chunkParent;
-        private Vector3Int _playerChunk;
+        private Vector3Int _playerChunk = Vector3Int.zero;
+        private Vector3 _playerChunkPos = Vector3.zero;
         
         //Current Chunk map
         private Chunk[,] _chunks = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
@@ -45,29 +48,23 @@ namespace MapGenerator {
             }
             _rebakeMeshPosStack.Push(pos);
         }
-
-        public bool GetMapData(Vector3 pPos, out Block[,,] pMap) =>
-            GetMapData(ToChunkIdx(pPos), out pMap);
         
-        public bool GetMapData(Vector3Int pPos, out Block[,,] pMap) {
-            if (!_chunkDataStore.TryGetValue(pPos, out var info)) {
-                pMap = null;
-                _generateMapDataStack.Push(pPos);
-                return false;
-            }
+        public Block GetMapData(Vector3 pPos) {
 
-            pMap = info.Map;
-            return true;
+            var chunk = Chunk.GetChunkIdx(_args, pPos);
+            var chunkPos = Chunk.GetChunkLocalPos(_args, pPos).ToVec3Int();
+            
+            return _chunkDataStore[chunk].Map[chunkPos.x, chunkPos.y, chunkPos.z];
         }
         
         private void SpawnPlayer() {
-            _player = Instantiate(_playerPrefab);
+            Player = Instantiate(_playerPrefab);
             
             var camera = Camera.main!;
-            camera.transform.SetParent(_player.transform);
+            camera.transform.SetParent(Player.transform);
             camera.transform.localPosition = CAMERA_LOCAL_POS;
             
-            _player.transform.position = Vector3.up * _args.ChunkHeight;
+            Player.transform.position = Vector3.up * _args.ChunkHeight;
         }
         
         private void Init() {
@@ -88,7 +85,7 @@ namespace MapGenerator {
         }
 
         private void NewChunksLoad() {
-            var newChunkIdx = ToChunkIdx(_player.transform.position);
+            var newChunkIdx = Chunk.GetChunkIdx(_args, Player.transform.position);
             if (newChunkIdx == _playerChunk)
                 return;
 
@@ -133,15 +130,6 @@ namespace MapGenerator {
             (_chunks, _temp) = (_temp, _chunks);
         }
         
-        private Vector3Int ToChunkIdx(Vector3 pPos) {
-            var x = pPos.x / _args.ChunkLength;
-            x = x.Sign() * (Mathf.Abs(x) + 0.5f);
-            var z = pPos.z / _args.ChunkLength;
-            z = z.Sign() * (Mathf.Abs(z) + 0.5f);
-
-            return new((int)x, 0, (int)z);
-        }
-        
         //==================================================||Unity 
         
         private void Start() {
@@ -170,7 +158,8 @@ namespace MapGenerator {
 #endif
             
         }
-        
+
+        private int _bakeCnt = 0; 
         private void Update() {
             base.Update();
             
@@ -178,7 +167,7 @@ namespace MapGenerator {
             Log();
 #endif
             
-            if (_player == null && Input.GetKeyDown(KeyCode.U))
+            if (Player == null && _bakeCnt >= (2 * SIZE + 1) * (2 * SIZE + 1))
                 SpawnPlayer();
             
             while (_rebakeMeshDataStack.Count != 0) {
@@ -192,12 +181,15 @@ namespace MapGenerator {
                 if (_meshDataStack.TryPop(out var value)) {
                     Debug.Log($"Bake: {value.Idx}");
                     RegisterMesh(value);
+                    _bakeCnt++;
                 }
             }
             LoadAllMesh();
-            
-            if(_player != null)
+
+            if (Player != null) {
                 NewChunksLoad();
+                _playerChunkPos = Chunk.GetChunkLocalPos(_args, Player.transform.position);
+            }
         }
         
         private void OnApplicationQuit() {
@@ -218,5 +210,6 @@ namespace MapGenerator {
         }
         
 #endif
+        
     }
 }

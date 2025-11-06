@@ -19,7 +19,7 @@ namespace Test {
 
              var result = new StringBuilder();
              while (queue.Any()) {
-                 result.AppendLine(queue.Pop().ToString());
+                 result.AppendLine(queue.Dequeue().ToString());
              }
 
              Debug.Log(result);

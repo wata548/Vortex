@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace MapGenerator.Player {
+namespace Player {
 
     public interface IInputSetting {
         Vector3 InputDirection { get; }

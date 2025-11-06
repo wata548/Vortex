@@ -1,7 +1,7 @@
 ﻿using Extension;
 using UnityEngine;
 
-namespace MapGenerator.Player {
+namespace Player {
     [RequireComponent(typeof(Rigidbody))]
     public class Movement: MonoBehaviour {
 
@@ -10,19 +10,18 @@ namespace MapGenerator.Player {
         //peekTime = 0.3, maxHeight = 1.3 => gravityScale = -28.8888..., jumpScale = 8.666...
         // j = 2h / t, g = -j / t
         
-        private const float JUMP_SCALE = 8.66f;
+        public const float JUMP_SCALE = 8.66f;
         private const float CONTACT_RANGE = 0.05f;
         private const float SPEED = 6f;
 
         private bool _isGround;
-        private Camera _camera;
         private Rigidbody _rigidbody;
 #if UNITY_EDITOR
         private Vector3 E_inputDirection = Vector3.forward;
         private bool E_isStop = false;
 #endif
         
-       //==================================================||Medhods 
+        //==================================================||Medhods 
         private void GroundCheck() {
             var pos = transform.position;
             pos.y -= transform.localScale.y * 0.5f;
@@ -55,26 +54,13 @@ namespace MapGenerator.Player {
             return delta;
         }
         
-        private void CameraUpdate() {
-
-            var mouseDelta = new Vector2(Input.GetAxisRaw("Mouse X"), -Input.GetAxisRaw("Mouse Y"));
-            var rotation = transform.rotation.eulerAngles;
-            rotation.y += mouseDelta.x;
-            
-            var pitch = _camera.transform.rotation.eulerAngles.x + mouseDelta.y;
-            _camera.transform.localRotation = Quaternion.Euler(pitch, 0, 0);
-            transform.rotation = Quaternion.Euler(rotation);
-        }
-
-       //==================================================||Unity 
+        //==================================================||Unity 
         private void Awake() {
             _rigidbody = GetComponent<Rigidbody>();
-            _camera = Camera.main!;
         }
 
         private void Update() {
             
-            CameraUpdate();
             var delta = InputPostProcessing();
             var velocity = _rigidbody.velocity;
             (velocity.x, velocity.z) = (delta.x, delta.z);

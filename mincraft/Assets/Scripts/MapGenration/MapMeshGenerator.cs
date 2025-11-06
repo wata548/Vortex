@@ -267,7 +267,6 @@ namespace MapGenerator {
             pOrigin *= pArgs.ChunkRange;
             
             var noise = new PerLinNoise(pArgs.Seed);
-            var noise2 = new FastNoiseLite(pArgs.Seed);
             var map = new Block[pArgs.ChunkLength + 1, pArgs.ChunkHeight, pArgs.ChunkLength + 1];
             
             for (int z = 0; z < pArgs.ChunkLength + 1; z++) {

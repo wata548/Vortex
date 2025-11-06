@@ -2,6 +2,8 @@
     public static class ExNumber {
         public static int Abs(this int value) => value >= 0 ? value : -value;
         public static bool Symbol(this int value) => value >= 0;
+        public static int Sign(this int pValue) =>
+            pValue == 0 ? 0 : pValue > 0 ? 1 : -1;
         public static int GCD(this int value1, int value2) =>
             value1 == 0 ? value2 : GCD(value2 % value1, value1);
 

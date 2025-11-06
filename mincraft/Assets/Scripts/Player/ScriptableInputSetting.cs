@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace MapGenerator.Player {
+namespace Player {
     
     [CreateAssetMenu(menuName = "Input")]
     public class DefaultScriptableInputSetting: ScriptableInputSetting {

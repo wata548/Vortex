@@ -12,6 +12,6 @@ namespace Extension {
             new(target.x, target.y);
 
         public static Vector3Int ToVec3Int(this Vector3 pTarget) =>
-            new((int)pTarget.x, (int)pTarget.y, (int)pTarget.z);
+            new(Mathf.FloorToInt(pTarget.x), Mathf.FloorToInt(pTarget.y), Mathf.FloorToInt(pTarget.z));
     }
 }

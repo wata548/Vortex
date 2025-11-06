@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Entity.FSM;
+using Extension;
 using FSM;
 using UnityEngine;
 
@@ -47,6 +48,10 @@ namespace Entity {
         protected void Update() {
             FSM.Update(this);
         }
-       
+
+        protected void OnDrawGizmos() {
+            var a = (transform.position).ToVec3Int() + Vector3.one * 0.5f;
+            Gizmos.DrawCube(a, Vector3.one);
+        }
     }
 }
