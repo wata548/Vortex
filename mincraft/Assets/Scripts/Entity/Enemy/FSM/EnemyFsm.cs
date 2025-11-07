@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using FSM;
 
-namespace Entity.FSM {
+namespace Entity.Enemy.FSM {
     public class EnemyFsm: DefaultFSM<EnemyState, EnemyBase> {
 
         private IReadOnlyDictionary<EnemyState, IState<EnemyState, EnemyBase>> _stateMap;

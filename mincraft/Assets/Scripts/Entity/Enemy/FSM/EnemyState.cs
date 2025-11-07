@@ -1,4 +1,4 @@
-﻿namespace Entity.FSM {
+﻿namespace Entity.Enemy.FSM {
     public enum EnemyState {
         Idle,
         Wander,

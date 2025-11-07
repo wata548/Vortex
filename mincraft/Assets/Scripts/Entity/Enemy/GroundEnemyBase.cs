@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using Entity.FSM;
+﻿using System.Collections.Generic;
+using Entity.Enemy.FSM;
 using Extension.Test;
 using FSM;
-using Unity.VisualScripting;
 using UnityEngine;
 
-namespace Entity {
+namespace Entity.Enemy {
+    
+    [RequireComponent(typeof(GroundMovement))]
     public class GroundEnemyBase: EnemyBase {
 
         [SerializeField] private int _detectRange = 15; 
@@ -21,7 +21,7 @@ namespace Entity {
 
         protected override Dictionary<EnemyState, IState<EnemyState, EnemyBase>> RegisterEnemyStateMap() {
             
-            _follow = new AStarFollow(_speed, _attackRange, _detectRange);
+            _follow = new AStarFollow(_attackRange, _detectRange);
             return new() {
             
                 { EnemyState.Idle, new LogState<EnemyState, EnemyBase>(EnemyState.Idle) },

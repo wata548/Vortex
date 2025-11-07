@@ -3,39 +3,44 @@ using System.Runtime.CompilerServices;
 using Extension;
 using FSM;
 using MapGenerator;
+using Unity.VisualScripting;
 using UnityEngine;
 
-namespace Entity.FSM {
+namespace Entity.Enemy.FSM {
     public class AStarFollow: IState<EnemyState, EnemyBase> {
 
+        //==================================================||Constant 
         private const float PROCEDURE_TIME_LIMIT = 4f;
         
+        //==================================================|| Properties 
         public EnemyState State { get; } = EnemyState.Follow;
 
+        //==================================================|| Fields
         private readonly int _attackRange;
         private readonly int _detectRange;
 
-        private float _speed;
         private float _procedureTime;
         public Vector3 _targetPos;
-        private Vector3 _velocity;
-        private Rigidbody _rigid = null;
-
-        public AStarFollow(float pSpeed = 2, int pAttackRange = 1, int pDetectRange = 10) {
+        public Vector3 _velocity;
+        
+        private GroundMovement _movement = null;
+        
+        //==================================================|| Constructors
+        public AStarFollow(int pAttackRange = 1, int pDetectRange = 10) {
             _attackRange = pAttackRange;
             _detectRange = pDetectRange;
-            _speed = pSpeed;
         }
 
-        private Vector3 AStar(Vector3Int pStart, Vector3Int pDest) {
+        //==================================================||Methods 
+        private Vector3Int AStar(Vector3Int pStart, Vector3Int pDest) {
             var detectMapSize = _detectRange * 2 + 1;
             var visit = new bool[detectMapSize * detectMapSize * detectMapSize];
             var dist = new int[detectMapSize * detectMapSize * detectMapSize];
-            var queue = new PriorityQueue<(Vector3Int Pos, Vector3 FirstMove, int F)>(true, 
+            var queue = new PriorityQueue<(Vector3Int Pos, Vector3Int FirstMove, int F)>(true, 
                 (lhs, rhs) => lhs.F.CompareTo(rhs.F)
             );
             
-            queue.Enqueue((Vector3Int.zero, Vector3.zero, 1));
+            queue.Enqueue((Vector3Int.zero, Vector3Int.zero, 1));
             
             var directions = new Vector3Int[] {
                 Vector3Int.forward,
@@ -44,6 +49,14 @@ namespace Entity.FSM {
                 Vector3Int.right,
             };
 
+            while(ChunkManager.Instance.GetMapData(pDest + Vector3Int.down) == Block.Air)
+                pDest += Vector3Int.down;
+            while(ChunkManager.Instance.GetMapData(pStart + Vector3Int.down) == Block.Air)
+                pStart += Vector3Int.down;
+            
+            if(pDest == pStart)
+                return Vector3Int.zero;
+            
             while (queue.Count > 0) {
                 var (pos, dir, _) = queue.Dequeue();
                 var moveCnt =  GetDist(pos);
@@ -61,7 +74,7 @@ namespace Entity.FSM {
                     if (GetVisit(pos + direction)) {
                         continue;
                     }
-                    
+
                     if (pStart + pos + direction == pDest) {
                         return dir;
                     }
@@ -83,6 +96,8 @@ namespace Entity.FSM {
 
                         nextPos += gravity; 
                         if (!GetVisit(nextPos) && (prevValue == 0 || GetDist(nextPos) > moveCnt + 1)) {
+                            if (pStart + nextPos == pDest)
+                                return dir == Vector3.zero ? direction + gravity : dir;
                             queue.Enqueue((nextPos, dir == Vector3.zero ? direction + gravity : dir, heuristic + moveCnt + 1));
                             SetDist(nextPos, moveCnt + 1);    
                         }
@@ -96,6 +111,8 @@ namespace Entity.FSM {
                         var heuristic = (pStart + nextPos - pDest).sqrMagnitude;
                         var prevValue = GetDist(nextPos);
                         if (!GetVisit(nextPos) && (prevValue == 0 || prevValue > moveCnt + 1)) {
+                            if (pStart + nextPos == pDest)
+                                return dir == Vector3.zero ? direction + Vector3Int.up: dir;
                             queue.Enqueue((nextPos, dir == Vector3.zero ? direction + Vector3Int.up : dir, heuristic + moveCnt + 1));
                             SetDist(nextPos, moveCnt + 1);
                         }
@@ -103,7 +120,8 @@ namespace Entity.FSM {
                 }
             }
 
-            throw new Exception("Not found");
+            throw new Exception();
+            //return Vector3.zero;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             bool GetVisit(Vector3Int pPos) =>
@@ -121,7 +139,7 @@ namespace Entity.FSM {
         }
 
         
-        //==================================================||State 
+        //==================================================||Main Logic 
         public void Update(EnemyBase pTarget) {
 
             if (ChunkManager.Instance.Player == null)
@@ -129,53 +147,62 @@ namespace Entity.FSM {
             
             _procedureTime += Time.deltaTime;
             var playerPos = ChunkManager.Instance.Player.transform.position;
-            var dist = (playerPos - pTarget.transform.position).magnitude;
-            
-            if (dist <= _attackRange) {
+            var dist = (playerPos - pTarget.transform.position);
+
+            if (Mathf.Abs(dist.x) <= _attackRange && Mathf.Abs(dist.y) <= _attackRange && Mathf.Abs(dist.z) <= _attackRange) {
                 pTarget.FSM.Change(pTarget, EnemyState.Attack);
                 return;
             }
-            if (dist >= _detectRange) {
+            if (Mathf.Abs(dist.x) >= _detectRange && Mathf.Abs(dist.y) >= _detectRange && Mathf.Abs(dist.z) >= _detectRange) {
                 pTarget.FSM.Change(pTarget, EnemyState.Idle);
                 return;
             }
 
             var pos = pTarget.transform.position;
-            if ((pos - _targetPos).magnitude <= 0.01f || _procedureTime >= PROCEDURE_TIME_LIMIT) {
+            var dir = _targetPos - pos;
+            dir.y = 0;
+            
+            if (dir.magnitude <= 0.1f || _procedureTime >= PROCEDURE_TIME_LIMIT) {
 
-                if(_targetPos != Vector3.zero)
-                    pTarget.transform.position = _targetPos;
+                _targetPos = pTarget.transform.position.ToVec3Int() + Vector3.one * 0.5f;
+                pTarget.transform.position = _targetPos;
+                
                 var start = pTarget.transform.position.ToVec3Int();
                 var dest = playerPos.ToVec3Int();
                 _velocity = AStar(start, dest);
+                if (_velocity == Vector3.zero) {
+                    
+                    pTarget.FSM.Change(pTarget, EnemyState.Attack);
+                    return;
+                }
+                
                 _procedureTime = 0;
-                _targetPos = pTarget.transform.position + _velocity;
+                _targetPos += _velocity;
 
                 if (_velocity.y < 0)
                     _velocity.y = 0;
                 
-                _velocity.x *= _speed;
-                _velocity.y *= Player.Movement.JUMP_SCALE;
-                _velocity.z *= _speed;
+                if (_velocity.y > 0)
+                    _movement.Jump();
+                _movement.SetDirection(_velocity);
             }
-            _rigid ??= pTarget.GetComponent<Rigidbody>();
-            var velocity = _rigid.velocity;
-            (velocity.x, velocity.z) = (_velocity.x, _velocity.z);
-            velocity.y += _velocity.y;
-            
-            _velocity.y = 0;
-            
-            _rigid.velocity = velocity;
         }
 
         public void Enter(EnemyBase pTarget, EnemyState pPrev) {
             Debug.Log($"Enter Follow mode({pTarget.name})");
+            _movement = pTarget.GetComponent<GroundMovement>();
+            if (_movement == null)
+                throw new Exception($"Enemy must have ground movement component. ({pTarget.name})");
+            
+            pTarget.transform.position = pTarget.transform.position.ToVec3Int() + new Vector3(0.5f, 0.5f, 0.5f);
+            _targetPos = pTarget.transform.position.ToVec3Int() + Vector3.one * 0.5f;
             _procedureTime = PROCEDURE_TIME_LIMIT;
         }
 
         public void Exit(EnemyBase pTarget) {
-            _rigid.velocity = Vector3.zero;
             Debug.Log($"Exit Follow mode({pTarget.name})");
+            _movement?.SetDirection(Vector3.zero);
+            _targetPos = Vector3.zero;
         }
     }
 }

@@ -24,8 +24,9 @@ namespace FSM {
        //==================================================||Methods 
         public void Change(TTarget pTarget, IState<TKey, TTarget> pState) {
             _stateBehaviour?.Exit(pTarget);
+            var curState = CurState;
             _stateBehaviour = pState;
-            _stateBehaviour.Enter(pTarget, CurState);
+            _stateBehaviour.Enter(pTarget, curState);
         } 
         
         public void Update(TTarget pTarget) {

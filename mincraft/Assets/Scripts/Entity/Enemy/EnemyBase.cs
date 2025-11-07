@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using Entity.FSM;
+using Entity.Enemy.FSM;
 using Extension;
 using FSM;
 using UnityEngine;
 
-namespace Entity {
+namespace Entity.Enemy {
     
     public abstract class EnemyBase: MonoBehaviour, IEntity {
         

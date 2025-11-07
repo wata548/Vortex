@@ -53,8 +53,10 @@ namespace MapGenerator {
 
             var chunk = Chunk.GetChunkIdx(_args, pPos);
             var chunkPos = Chunk.GetChunkLocalPos(_args, pPos).ToVec3Int();
+            if (!_chunkDataStore.TryGetValue(chunk, out var chunkData))
+                return Block.Air;
             
-            return _chunkDataStore[chunk].Map[chunkPos.x, chunkPos.y, chunkPos.z];
+            return chunkData.Map[chunkPos.x, chunkPos.y, chunkPos.z];
         }
         
         private void SpawnPlayer() {
