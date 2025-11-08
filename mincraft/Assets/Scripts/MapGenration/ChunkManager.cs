@@ -54,7 +54,7 @@ namespace MapGenerator {
             var chunk = Chunk.GetChunkIdx(_args, pPos);
             var chunkPos = Chunk.GetChunkLocalPos(_args, pPos).ToVec3Int();
             if (!_chunkDataStore.TryGetValue(chunk, out var chunkData))
-                return Block.Air;
+                return Block.Dirty;
             
             return chunkData.Map[chunkPos.x, chunkPos.y, chunkPos.z];
         }

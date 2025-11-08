@@ -7,6 +7,8 @@ using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Entity.Enemy.FSM {
+    
+    [Serializable]
     public class AStarFollow: IState<EnemyState, EnemyBase> {
 
         //==================================================||Constant 
@@ -120,8 +122,8 @@ namespace Entity.Enemy.FSM {
                 }
             }
 
-            throw new Exception();
-            //return Vector3.zero;
+            Debug.LogWarning("can't find player");
+            return Vector3Int.zero;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             bool GetVisit(Vector3Int pPos) =>
@@ -140,6 +142,8 @@ namespace Entity.Enemy.FSM {
 
         
         //==================================================||Main Logic 
+
+        private Vector3 _dist; 
         public void Update(EnemyBase pTarget) {
 
             if (ChunkManager.Instance.Player == null)
@@ -149,11 +153,11 @@ namespace Entity.Enemy.FSM {
             var playerPos = ChunkManager.Instance.Player.transform.position;
             var dist = (playerPos - pTarget.transform.position);
 
-            if (Mathf.Abs(dist.x) <= _attackRange && Mathf.Abs(dist.y) <= _attackRange && Mathf.Abs(dist.z) <= _attackRange) {
+            if (dist.magnitude - pTarget.transform.localScale.z / 2 <= _attackRange) {
                 pTarget.FSM.Change(pTarget, EnemyState.Attack);
                 return;
             }
-            if (Mathf.Abs(dist.x) >= _detectRange && Mathf.Abs(dist.y) >= _detectRange && Mathf.Abs(dist.z) >= _detectRange) {
+            if (Mathf.Abs(dist.x) >= _detectRange || Mathf.Abs(dist.y) >= _detectRange || Mathf.Abs(dist.z) >= _detectRange) {
                 pTarget.FSM.Change(pTarget, EnemyState.Idle);
                 return;
             }
@@ -165,7 +169,10 @@ namespace Entity.Enemy.FSM {
             if (dir.magnitude <= 0.1f || _procedureTime >= PROCEDURE_TIME_LIMIT) {
 
                 _targetPos = pTarget.transform.position.ToVec3Int() + Vector3.one * 0.5f;
-                pTarget.transform.position = _targetPos;
+                var temp = _targetPos;
+                temp.y = pTarget.transform.position.y;
+                
+                pTarget.transform.position = temp;
                 
                 var start = pTarget.transform.position.ToVec3Int();
                 var dest = playerPos.ToVec3Int();

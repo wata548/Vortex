@@ -1,7 +1,7 @@
 ﻿namespace Entity.Enemy.FSM {
     public enum EnemyState {
         Idle,
-        Wander,
+        Patrol,
         Follow,
         Attack,
     }

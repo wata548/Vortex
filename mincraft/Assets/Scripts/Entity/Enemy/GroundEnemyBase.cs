@@ -26,6 +26,7 @@ namespace Entity.Enemy {
             
                 { EnemyState.Idle, new LogState<EnemyState, EnemyBase>(EnemyState.Idle) },
                 { EnemyState.Attack, new LogState<EnemyState, EnemyBase>(EnemyState.Attack) },
+                { EnemyState.Patrol, new LogState<EnemyState, EnemyBase>(EnemyState.Patrol) },
                 { EnemyState.Follow,  _follow},
             };
         
