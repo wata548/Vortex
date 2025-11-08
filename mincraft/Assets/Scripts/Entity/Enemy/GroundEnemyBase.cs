@@ -22,11 +22,13 @@ namespace Entity.Enemy {
         protected override Dictionary<EnemyState, IState<EnemyState, EnemyBase>> RegisterEnemyStateMap() {
             
             _follow = new AStarFollow(_attackRange, _detectRange);
+            var finder = new RangeFinder(7);
+            
             return new() {
             
-                { EnemyState.Idle, new LogState<EnemyState, EnemyBase>(EnemyState.Idle) },
+                { EnemyState.Idle, new RandomIdle(finder, 1f, 2f, pNext: new[] { EnemyState.Patrol }) },
                 { EnemyState.Attack, new LogState<EnemyState, EnemyBase>(EnemyState.Attack) },
-                { EnemyState.Patrol, new LogState<EnemyState, EnemyBase>(EnemyState.Patrol) },
+                { EnemyState.Patrol, new RandomPatrol(finder) },
                 { EnemyState.Follow,  _follow},
             };
         

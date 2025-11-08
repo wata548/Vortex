@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace FSM {
     
+    [Serializable]
     public class DefaultFSM<TKey, TTarget> 
         where TKey: Enum
         where TTarget: class {

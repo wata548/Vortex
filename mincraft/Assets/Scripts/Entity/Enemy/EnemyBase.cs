@@ -16,6 +16,14 @@ namespace Entity.Enemy {
         public float Speed { get; protected set; }
         public EnemyFsm FSM { get; private set; }
 
+        public Vector3Int Pos => new(
+            Mathf.FloorToInt(transform.position.x),
+            //floating point error
+            Mathf.RoundToInt(transform.position.y - transform.localScale.y * 0.5f),
+            Mathf.FloorToInt(transform.position.z)
+        );
+        
+        
         //==================================================||Methods 
         protected abstract Dictionary<EnemyState, IState<EnemyState, EnemyBase>> RegisterEnemyStateMap();
        

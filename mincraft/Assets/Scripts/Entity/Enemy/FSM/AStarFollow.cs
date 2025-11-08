@@ -174,7 +174,7 @@ namespace Entity.Enemy.FSM {
                 
                 pTarget.transform.position = temp;
                 
-                var start = pTarget.transform.position.ToVec3Int();
+                var start = pTarget.Pos;
                 var dest = playerPos.ToVec3Int();
                 _velocity = AStar(start, dest);
                 if (_velocity == Vector3.zero) {
@@ -201,8 +201,12 @@ namespace Entity.Enemy.FSM {
             if (_movement == null)
                 throw new Exception($"Enemy must have ground movement component. ({pTarget.name})");
             
-            pTarget.transform.position = pTarget.transform.position.ToVec3Int() + new Vector3(0.5f, 0.5f, 0.5f);
-            _targetPos = pTarget.transform.position.ToVec3Int() + Vector3.one * 0.5f;
+            //grid
+
+            var targetPos = pTarget.transform.position;
+            pTarget.transform.position = pTarget.Pos + new Vector3(0.5f, pTarget.transform.localScale.y * 0.5f, 0.5f);
+            
+            _targetPos = targetPos.ToVec3Int() + Vector3.one * 0.5f;
             _procedureTime = PROCEDURE_TIME_LIMIT;
         }
 
