@@ -104,7 +104,7 @@ namespace Entity.Enemy.FSM {
         }
 
         public void Exit(EnemyBase pTarget) {
-            _movement.SetDirection(Vector3.zero);
+            _movement?.SetDirection(Vector3.zero);
         }
     }
 }

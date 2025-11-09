@@ -62,6 +62,8 @@ namespace Entity.Enemy.FSM {
             while (queue.Count > 0) {
                 var (pos, dir, _) = queue.Dequeue();
                 var moveCnt =  GetDist(pos);
+                if(GetVisit(pos))
+                    continue;
                 SetVisit(pos, true);
                 
                 foreach (var direction in directions) {

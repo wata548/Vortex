@@ -68,6 +68,7 @@ namespace Entity {
             if (_isGround && _inputSetting.IsJumpStart)
                 velocity.y += JUMP_SCALE;
 
+            velocity.y += 0.01f;
             _rigidbody.velocity = velocity;
             GroundCheck();
         }
