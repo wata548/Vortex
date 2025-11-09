@@ -7,10 +7,10 @@ namespace Entity.Enemy.FSM {
     public class RandomPatrol: IState<EnemyState, EnemyBase> {
 
         //==================================================||Constant 
+        public EnemyState State { get; } = EnemyState.Patrol;
         private const float PROCEDURE_TIME_LIMIT = 4f;
         
        //==================================================||Fields 
-        public EnemyState State { get; } = EnemyState.Patrol;
         private IFindPlayer<EnemyBase> _finder;
         private int _min;
         private int _max;
@@ -18,7 +18,7 @@ namespace Entity.Enemy.FSM {
         
         private int _remainCnt;
         private Vector3 _targetPos;
-        private Vector3 _dir;
+        private Vector3Int _dir;
 
         private GroundMovement _movement;
         
@@ -28,15 +28,20 @@ namespace Entity.Enemy.FSM {
             _min = pMin;
             _finder = pFinder;
         }
-
+        
+        //==================================================||Methods 
         private bool AbleToMove(Vector3Int pPos) {
-            if (ChunkManager.Instance.GetMapData(pPos + _dir + Vector3.up) != Block.Air)
+            //Blocked
+            if (!EnemyBase.IsAir(pPos + _dir + Vector3Int.up))
                 return false;
-            if (ChunkManager.Instance.GetMapData(pPos + _dir) == Block.Air)
+            
+            //Straight
+            if (EnemyBase.IsAir(pPos + _dir))
                 return true;
             
-            if (ChunkManager.Instance.GetMapData(pPos + 2 * Vector3Int.up) == Block.Air &&
-                ChunkManager.Instance.GetMapData(pPos + _dir + 2 * Vector3.up) == Block.Air) 
+            //Jump
+            if (EnemyBase.IsAir(pPos + 2 * Vector3Int.up) 
+                && EnemyBase.IsAir(pPos + _dir + 2 * Vector3Int.up)) 
             {
                 _movement.Jump();
                 return true;
@@ -44,63 +49,61 @@ namespace Entity.Enemy.FSM {
 
             return false;
         }
+
+        private bool Move(EnemyBase pTarget) {
+            
+            _procedureTime -= Time.deltaTime;
+            var diff = pTarget.transform.position - _targetPos;
+            diff.y = 0;
+
+            if (diff.magnitude > 0.01f && _procedureTime > 0)
+                return false;
+            
+            _procedureTime = PROCEDURE_TIME_LIMIT;
+            
+            _targetPos = pTarget.FixedPos;
+            pTarget.transform.position = _targetPos;
+                            
+            _targetPos += _dir;
+            _remainCnt--;
+            
+            _movement.SetDirection(_dir);
+            return true;
+        }
         
         //==================================================||MainLogic 
        
         public void Update(EnemyBase pTarget) {
+            
             if (_finder.PlayerExist(pTarget)) {
                 pTarget.FSM.Change(pTarget, EnemyState.Follow);
                 return;
             }
 
-            _procedureTime -= Time.deltaTime;
+            if (!Move(pTarget))
+                return;
             
-            var diff = pTarget.transform.position - _targetPos;
-            diff.y = 0;
-            if (diff.magnitude <= 0.01f || _procedureTime <= 0) {
-                _procedureTime = PROCEDURE_TIME_LIMIT;
-                
-                _targetPos = pTarget.transform.position.ToVec3Int() + Vector3.one * 0.5f;
-                var temp = _targetPos;
-                temp.y = pTarget.transform.position.y;
-                
-                pTarget.transform.position = temp;
-                
-                _targetPos += _dir;
-                _remainCnt--;
-                if (_remainCnt == 0) {
-                    pTarget.FSM.Change(pTarget, EnemyState.Idle);
-                }
-                
-                if (!AbleToMove(pTarget.Pos)) {
-                    pTarget.FSM.Change(pTarget, EnemyState.Idle);
-                    return;
-                }
-                _movement.SetDirection(_dir);
+            if (_remainCnt == 0) {
+                pTarget.FSM.Change(pTarget, EnemyState.Idle);
+                return;
+            }
+            if (!AbleToMove(pTarget.FootPos)) {
+                pTarget.FSM.Change(pTarget, EnemyState.Idle);
             }
         }
 
         public void Enter(EnemyBase pTarget, EnemyState pPrev) {
             Debug.Log("Enter Patrol");
             
-            _procedureTime = PROCEDURE_TIME_LIMIT;
-            
-            var directions = new Vector3Int[] {
-                Vector3Int.forward,
-                Vector3Int.back,
-                Vector3Int.left,
-                Vector3Int.right,
-            };
-
+            _procedureTime = 0;
             _movement = pTarget.GetComponent<GroundMovement>();
             
             _remainCnt = Random.Range(_min, _max + 1) + 1;
-            _dir = directions[Random.Range(0, directions.Length)];
+            _dir = EnemyBase.DIRECTIONS[Random.Range(0, EnemyBase.DIRECTIONS.Length)];
 
-            _targetPos = pTarget.Pos + new Vector3(0.5f, pTarget.transform.localScale.y * 0.5f, 0.5f);
+            _targetPos = pTarget.FixedPos;
             pTarget.transform.position = _targetPos;
-            Debug.Log(_targetPos);
-
+            Debug.Log($"Next: {_targetPos}");
         }
 
         public void Exit(EnemyBase pTarget) {

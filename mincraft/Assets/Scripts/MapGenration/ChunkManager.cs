@@ -23,8 +23,8 @@ namespace MapGenerator {
         
         //Prefabs
         [SerializeField] private Chunk _chunkPrefab;
-        [SerializeField] private GameObject _playerPrefab;
-        public GameObject Player { get; private set; } = null;
+        [SerializeField] private Player.Player _playerPrefab;
+        public Player.Player Player { get; private set; } = null;
         
         //Generator Information
         private MapMeshGenerator _generator;
@@ -48,8 +48,17 @@ namespace MapGenerator {
             }
             _rebakeMeshPosStack.Push(pos);
         }
+
+        public bool IsLoadedChunk(Vector3Int pPos) {
+            var idx = Chunk.GetChunkIdx(_args, pPos);
+            return
+                idx.x <= _playerChunk.x + SIZE
+                && idx.x >= _playerChunk.x - SIZE
+                && idx.y <= _playerChunk.y + SIZE
+                && idx.y >= _playerChunk.y - SIZE;
+        }
         
-        public Block GetMapData(Vector3 pPos) {
+        public Block GetMapData(Vector3Int pPos) {
 
             var chunk = Chunk.GetChunkIdx(_args, pPos);
             var chunkPos = Chunk.GetChunkLocalPos(_args, pPos).ToVec3Int();

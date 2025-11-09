@@ -4,8 +4,7 @@ using UnityEngine;
 
 namespace FSM {
     
-    [Serializable]
-    public class DefaultFSM<TKey, TTarget> 
+    public abstract class DefaultFSM<TKey, TTarget> 
         where TKey: Enum
         where TTarget: class {
  
@@ -17,10 +16,6 @@ namespace FSM {
         
         //==================================================||Fields
         protected IState<TKey, TTarget> _stateBehaviour = null;
-
-       //==================================================||Constructors
-        //public DefaultFSM(IState<TKey, TTarget> pState) =>
-        //    _state = pState;
 
        //==================================================||Methods 
         public void Change(TTarget pTarget, IState<TKey, TTarget> pState) {

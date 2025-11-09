@@ -149,7 +149,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _detectRange: 15
   _attackRange: 1
-  _speed: 3
+  _speed: 20
 --- !u!114 &7176326930198319088
 MonoBehaviour:
   m_ObjectHideFlags: 0

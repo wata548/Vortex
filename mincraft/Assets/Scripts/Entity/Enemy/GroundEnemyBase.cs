@@ -14,6 +14,7 @@ namespace Entity.Enemy {
         [SerializeField] private int _speed = 2;
         private AStarFollow _follow;
         
+        [TestMethod] private void ShowState() => Debug.Log(FSM.CurState);
         [TestMethod]
         private void Test() {
             FSM.Change(this, EnemyState.Follow);
@@ -38,7 +39,9 @@ namespace Entity.Enemy {
 
             base.OnDrawGizmos();
             Gizmos.color = Color.cyan;
-            Gizmos.DrawCube(_follow?._targetPos ?? Vector3.zero, Vector3.one);
+            #if UNITY_EDITOR
+            Gizmos.DrawCube(_follow?.TargetPos ?? Vector3.zero, Vector3.one);
+            #endif
         }
     }
 }
