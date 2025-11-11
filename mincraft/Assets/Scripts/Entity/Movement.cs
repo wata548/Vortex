@@ -10,7 +10,7 @@ namespace Entity {
         
         //peekTime = 0.3, maxHeight = 1.3 => gravityScale = -28.8888..., jumpScale = 8.666...
         // j = 2h / t, g = -j / t
-        public const float JUMP_SCALE = 8.66f;
+        private const float JUMP_SCALE = 8.66f;
         private const float CONTACT_RANGE = 0.05f;
 
         [SerializeField] private float _speed = 6f;

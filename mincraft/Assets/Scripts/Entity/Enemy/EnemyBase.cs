@@ -39,7 +39,16 @@ namespace Entity.Enemy {
         );
         
         //==================================================||Methods 
-
+        [TestMethod] public void ShowState() => Debug.Log(FSM.CurState);
+        
+        public void SetUp(EnemyData pData) {
+            IsAlive = pData.IsAlive;
+            MaxHp = pData.MaxHp;
+            Hp = pData.Hp;
+            Speed = pData.Speed;
+            transform.position = pData.FixedPos;
+        }
+        
         
         //Check this position's block equal to air.
         //But if this position that isn't loaded, it out false

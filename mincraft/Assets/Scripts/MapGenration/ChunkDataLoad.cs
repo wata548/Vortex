@@ -35,7 +35,7 @@ namespace MapGenerator {
                     continue;
                 }
 
-                _chunkDataStore.TryAdd(target, (null, _generator.PerlinMapGeneration(_args, target)));
+                _chunkDataStore.TryAdd(target, (null, _generator.PerlinMapGeneration(Args, target)));
                 _generateMeshPosStack.Push(target);
             }
         }
@@ -84,12 +84,12 @@ namespace MapGenerator {
         }
 
         private void LoadAllMesh() {
-            var interval = new Vector3(_args.ChunkLength, 0, _args.ChunkLength);
+            var interval = new Vector3(Args.ChunkLength, 0, Args.ChunkLength);
                     
             foreach (var chunk in _chunks) {
                 var idx = chunk.Idx;
                 var pos = idx.Multiple(interval);
-                pos -= new Vector3(_args.ChunkLength / 2f, 0, _args.ChunkLength / 2f);
+                pos -= new Vector3(Args.ChunkLength / 2f, 0, Args.ChunkLength / 2f);
         
                 if(_chunkDataStore.TryGetValue(idx, out var value))
                     chunk.SetUp(value.Mesh, pos);

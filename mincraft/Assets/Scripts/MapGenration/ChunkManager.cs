@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Entity.Enemy;
 using Extension;
 using Extension.Test;
 using UnityEngine;
@@ -28,7 +29,7 @@ namespace MapGenerator {
         
         //Generator Information
         private MapMeshGenerator _generator;
-        [SerializeField] private MapGenerationArgs _args = new(pOctave:2);
+        [field: SerializeField] public MapGenerationArgs Args { get; private set; } = new(pOctave:2);
         private Transform _chunkParent;
         private Vector3Int _playerChunk = Vector3Int.zero;
         private Vector3 _playerChunkPos = Vector3.zero;
@@ -50,7 +51,7 @@ namespace MapGenerator {
         }
 
         public bool IsLoadedChunk(Vector3Int pPos) {
-            var idx = Chunk.GetChunkIdx(_args, pPos);
+            var idx = Chunk.GetChunkIdx(Args, pPos);
             return
                 idx.x <= _playerChunk.x + SIZE
                 && idx.x >= _playerChunk.x - SIZE
@@ -60,8 +61,8 @@ namespace MapGenerator {
         
         public Block GetMapData(Vector3Int pPos) {
 
-            var chunk = Chunk.GetChunkIdx(_args, pPos);
-            var chunkPos = Chunk.GetChunkLocalPos(_args, pPos).ToVec3Int();
+            var chunk = Chunk.GetChunkIdx(Args, pPos);
+            var chunkPos = Chunk.GetChunkLocalPos(Args, pPos).ToVec3Int();
             if (!_chunkDataStore.TryGetValue(chunk, out var chunkData))
                 return Block.Dirty;
             
@@ -75,13 +76,13 @@ namespace MapGenerator {
             camera.transform.SetParent(Player.transform);
             camera.transform.localPosition = CAMERA_LOCAL_POS;
             
-            Player.transform.position = Vector3.up * _args.ChunkHeight;
+            Player.transform.position = Vector3.up * Args.ChunkHeight;
         }
         
         private void Init() {
             _playerChunk = Vector3Int.zero;
                     
-            var interval = new Vector3(_args.ChunkLength, 0, _args.ChunkLength);
+            var interval = new Vector3(Args.ChunkLength, 0, Args.ChunkLength);
             for (int i = -SIZE; i <= SIZE; i++) {
                 for (int j = -SIZE; j <= SIZE; j++) {
                     var chunk = Instantiate(_chunkPrefab, _chunkParent);
@@ -96,7 +97,7 @@ namespace MapGenerator {
         }
 
         private void NewChunksLoad() {
-            var newChunkIdx = Chunk.GetChunkIdx(_args, Player.transform.position);
+            var newChunkIdx = Chunk.GetChunkIdx(Args, Player.transform.position);
             if (newChunkIdx == _playerChunk)
                 return;
 
@@ -112,6 +113,8 @@ namespace MapGenerator {
                 for (int j = 0; j < size; j++, pos.x++) {
 
                     if (pos.x is < 0 or >= 2 * SIZE + 1 || pos.z is < 0 or >= 2 * SIZE + 1) {
+                        
+                        EnemyManager.UnLoad(new(_playerChunk.x + pos.x - SIZE, 0, _playerChunk.z + pos.z - SIZE));
                         tempPool.Enqueue(_chunks[i, j]);
                         continue;
                     }
@@ -131,6 +134,7 @@ namespace MapGenerator {
                         continue;
 
                     var targetChunk = tempPool.Dequeue();
+                    EnemyManager.Load(pos);
                     _temp[i, j] = targetChunk;
                     
                     targetChunk.Ready(pos);
@@ -199,7 +203,7 @@ namespace MapGenerator {
 
             if (Player != null) {
                 NewChunksLoad();
-                _playerChunkPos = Chunk.GetChunkLocalPos(_args, Player.transform.position);
+                _playerChunkPos = Chunk.GetChunkLocalPos(Args, Player.transform.position);
             }
         }
         

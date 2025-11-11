@@ -1,7 +1,6 @@
 ﻿#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using UnityEditor;
 
@@ -27,7 +26,7 @@ namespace Extension.Test {
                     parameters[method][idx] = (parameter, input);
                 }
                 else {
-                    input = EditorGUILayout.TextField($"{parameter.Name}({parameter.ParameterType.Name})", "");
+                    input = EditorGUILayout.TextField($"{parameter.Name}({parameter.ParameterType.Name})", parameter.HasDefaultValue ? parameter.DefaultValue!.ToString() : "");
                     parameters[method].Add((parameter, input));
                 }
 

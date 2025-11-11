@@ -1,12 +1,9 @@
 ﻿#if UNITY_EDITOR
 
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
-using Object = System.Object;
 
 namespace Extension.Test {
     
@@ -17,6 +14,7 @@ namespace Extension.Test {
             base.OnInspectorGUI();
             
             var flag = BindingFlags.Static
+                       | BindingFlags.FlattenHierarchy
                        | BindingFlags.Public
                        | BindingFlags.NonPublic;
 
@@ -25,13 +23,13 @@ namespace Extension.Test {
                 return;
             
             var targets = targetType
-                .HaveAttributeMethods<TestMethod>(flag)
+                .HaveAttributeMethods(flag, new MethodComparer<TestMethodAttribute>())
                 .OrderByDescending(data => data.Item2.Priority);
 
             if (!targets.Any())
                 return;
             
-            isFoldOut = EditorGUILayout.BeginFoldoutHeaderGroup(isFoldOut, "TestFunction");
+            isFoldOut = EditorGUILayout.BeginFoldoutHeaderGroup(isFoldOut, "TestMethods");
             if (!isFoldOut)
                 return;
 
@@ -55,8 +53,8 @@ namespace Extension.Test {
                 if (!Application.isPlaying && targetButton.Attribute.RuntimeOnly)
                     EditorGUI.EndDisabledGroup();
 
-                EditorGUILayout.EndFoldoutHeaderGroup();
             }
+            EditorGUILayout.EndFoldoutHeaderGroup();
         }
 
     }

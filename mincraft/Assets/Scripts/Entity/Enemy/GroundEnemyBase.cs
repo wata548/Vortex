@@ -14,9 +14,10 @@ namespace Entity.Enemy {
         [SerializeField] private int _speed = 2;
         private AStarFollow _follow;
         
-        [TestMethod] private void ShowState() => Debug.Log(FSM.CurState);
+        
+        
         [TestMethod]
-        private void Test() {
+        private void FollowPlayer() {
             FSM.Change(this, EnemyState.Follow);
         }
 

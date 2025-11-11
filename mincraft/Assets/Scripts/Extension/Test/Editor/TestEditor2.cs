@@ -14,21 +14,22 @@ namespace Extension.Test {
             base.OnInspectorGUI();
             
             var flag = BindingFlags.Instance
+                       | BindingFlags.FlattenHierarchy
                        | BindingFlags.Static
                        | BindingFlags.Public
                        | BindingFlags.NonPublic;
             
             //Find functions
-            var targets = 
-                ExAttribute.HaveAttributeMethods<TestMethod>(target, flag)
-                    .OrderByDescending(data => data.Attribute.Priority);
+            var targets = target.GetType()
+                .HaveAttributeMethods(flag, new MethodComparer<TestMethodAttribute>())
+                .OrderByDescending(data => data.Attribute.Priority);
 
             //If it didn't have attribute Field, reutrn;
             if (!targets.Any())
                 return;
             
             //Show foldOut
-            isFoldOut = EditorGUILayout.BeginFoldoutHeaderGroup(isFoldOut, "TestFunction");
+            isFoldOut = EditorGUILayout.BeginFoldoutHeaderGroup(isFoldOut, "TestMethods");
             if (!isFoldOut)
                 return;
             
@@ -62,8 +63,8 @@ namespace Extension.Test {
                 if (!Application.isPlaying && targetButton.Attribute.RuntimeOnly)
                     EditorGUI.EndDisabledGroup();
 
-                EditorGUILayout.EndFoldoutHeaderGroup();
             }
+            EditorGUILayout.EndFoldoutHeaderGroup();
         }
     }
 }
