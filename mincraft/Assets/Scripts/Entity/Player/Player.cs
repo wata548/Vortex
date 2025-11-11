@@ -1,4 +1,5 @@
-﻿using Entity;
+﻿using System;
+using Entity;
 using UnityEngine;
 
 namespace Player {
@@ -28,6 +29,12 @@ namespace Player {
 
         public void Heal(int pAmount) {
             throw new System.NotImplementedException();
+        }
+
+        private void Awake() {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+
         }
     }
 }
