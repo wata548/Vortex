@@ -1,4 +1,5 @@
 ﻿using System;
+using Extension;
 using UnityEngine;
 
 namespace Player {
@@ -6,12 +7,14 @@ namespace Player {
 
         private const float INTERACT_RANGE = 5;
         
-       //==================================================||Fields 
+        //==================================================||Fields 
+        [SerializeField] private GameObject _selectBox;
+        
         [SerializeField] private Vector2 _initPos = Vector2.zero;
         private Vector3 _point = Vector3.zero; 
         private Camera _camera = null;
         
-       //==================================================||Methods 
+        //==================================================||Methods 
         private void CameraUpdate() {
 
             var mouseDelta = new Vector2(Input.GetAxisRaw("Mouse X"), -Input.GetAxisRaw("Mouse Y"));
@@ -28,10 +31,10 @@ namespace Player {
             if (!Physics.Raycast(_camera.transform.position, _camera.transform.forward, out var hit, INTERACT_RANGE))
                 return;
 
-            _point = hit.point;
+            _point = (hit.point + _camera.transform.forward * 0.01f).ToVec3Int() + Vector3.one * 0.5f;
         }
 
-       //==================================================||Unity 
+        //==================================================||Unity 
         private void Awake() {
             _camera = Camera.main!;
             _camera.transform.parent = transform;
@@ -43,11 +46,18 @@ namespace Player {
 
             if (Input.GetMouseButtonDown(0)) {
                 Interact();
+                _selectBox.SetActive(true);
+                _selectBox.transform.position = _point;
             }
-        }
 
-        private void OnDrawGizmos() {
-            Gizmos.DrawSphere(_point, 1);
+            if (Input.GetMouseButton(0)) {
+                
+                _selectBox.transform.position = _point;
+                _selectBox.transform.rotation = Quaternion.identity;
+            }
+
+            if (Input.GetMouseButtonUp(0))
+                _selectBox.SetActive(false);
         }
     }
 }
