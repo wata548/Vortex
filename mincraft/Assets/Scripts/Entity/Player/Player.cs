@@ -1,10 +1,13 @@
 ﻿using System;
 using Entity;
+using Extension.Test;
+using MapGenerator;
 using UnityEngine;
 
 namespace Player {
     
     [RequireComponent(typeof(PlayerMovement))]
+    [RequireComponent(typeof(Interaction))]
     public class Player: MonoBehaviour, IEntity {
         public bool IsAlive { get; }
         public int MaxHp { get; }
@@ -23,6 +26,13 @@ namespace Player {
             Mathf.RoundToInt(transform.position.y - transform.localScale.y * 0.5f),
             Mathf.FloorToInt(transform.position.z)
         );
+
+        [TestMethod]
+        private void CurPos() {
+            var pos = Chunk.GetChunkPos(ChunkManager.Instance.Args, transform.position, out var idx);
+            Debug.Log($"Player: {idx} - {pos}");
+        }
+        
         public void GetDamage(int pAmount) {
             throw new System.NotImplementedException();
         }

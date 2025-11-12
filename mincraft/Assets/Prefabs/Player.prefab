@@ -189,3 +189,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _selectBoxPrefab: {fileID: 6421002237424396998, guid: fd5c4f50acc68be4b85f945c208d7486, type: 3}
+  _breakEffectMaterial: {fileID: 2100000, guid: 979d9eb52ae719c4d8237def5d7d69f6, type: 2}

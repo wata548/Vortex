@@ -2,9 +2,13 @@ Shader "Custom/Wireframe"
 {
     Properties
     {
-        _MainTex ("Texture", 2D) = "white" {}
-        _Color ("Texture", Color) = (1,1,1,1)
+        _MainTex ("OutLineTexture", 2D) = "white" {}
+        _Color1 ("Texture", Color) = (1,1,1,1)
+        
+        _Break ("BreakTexture", 2D) = "white" {}
+        _Color2 ("Texture", Color) = (1,1,1,1)
         _Thickness("Thickness", float) = 0.01
+        _BreakProcess("Break", float) = 0.01
     }
     SubShader
     {
@@ -39,9 +43,12 @@ Shader "Custom/Wireframe"
             };
 
             sampler2D _MainTex;
-            float4 _Color;
+            sampler2D _Break;
+            float4 _Color1;
+            float4 _Color2;
             float4 _MainTex_ST;
             float _Thickness;
+            float _BreakProcess;
 
             v2f vert(appdata v)
             {
@@ -55,12 +62,14 @@ Shader "Custom/Wireframe"
             fixed4 frag(v2f i) : SV_Target
             {
                 // sample the texture
-                fixed4 o = tex2D(_MainTex, i.uv) * _Color;
+                fixed4 o = tex2D(_MainTex, i.uv) * _Color1;
+
+                if (i.uv.x <= _Thickness || i.uv.x >= 1 - _Thickness || i.uv.y <= _Thickness || i.uv.y >= 1 - _Thickness)
+                    return o;
                 
-                if (i.uv.x <= _Thickness || i.uv.x >= 1 - _Thickness)
-                    o.w = _Color.w;
-                else if (i.uv.y <= _Thickness || i.uv.y >= 1 - _Thickness)
-                    o.w = _Color.w;
+                if (i.uv.x <= 0.5f + _BreakProcess / 2 && i.uv.x >= 0.5f - _BreakProcess / 2 && i.uv.y <= 0.5f + _BreakProcess / 2 && i.uv.y >= 0.5f - _BreakProcess / 2) {
+                    o = tex2D(_Break, i.uv) * _Color2;
+                }
                 else
                     o.w = 0;
 

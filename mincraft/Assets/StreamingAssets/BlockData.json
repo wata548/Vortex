@@ -1,0 +1,17 @@
+﻿{
+  "Air": [
+    "BreakTime=2147483648"
+  ],
+  "Base": [
+    "BreakTime=2147483647"
+  ],
+  "Grass": [
+    "BreakTime=1"
+  ],
+  "Dirty": [
+    "BreakTime=1"
+  ],
+  "Stone": [
+    "BreakTime=7"
+  ] 
+}

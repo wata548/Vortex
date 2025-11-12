@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -42,13 +43,13 @@ namespace MapGenerator.Tile {
             if (posInfos != null || isInited)
                 return;    
             isInited = true;
-            
+
             var rawData = JsonConvert.DeserializeObject<Dictionary<string, BlockInfo[]>>(
-                Resources.Load<TextAsset>("TileData").text
+                File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "TileIdxData.json"))
             );
             
             var enumData = rawData
-                .Select(element => (Key: (Block)Enum.Parse(typeof(Block), element.Key), Value: element.Value))
+                .Select(element => (Key: Enum.Parse<Block>(element.Key), Value: element.Value))
                 .OrderBy(element => element.Key)
                 .ToList();
 

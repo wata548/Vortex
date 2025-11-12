@@ -16,9 +16,9 @@ namespace MapGenerator {
         private readonly ConcurrentStack<Vector3Int> _generateMeshPosStack = new();
         private readonly ConcurrentStack<MeshData> _meshDataStack = new();
         
-        //Rebake Load targets - Single Thread
-        private readonly ConcurrentStack<Vector3Int> _rebakeMeshPosStack = new();
-        private readonly ConcurrentStack<MeshData> _rebakeMeshDataStack = new();
+        //Re bake Load targets - Single Thread
+        private readonly ConcurrentStack<Vector3Int> _reBakeMeshPosStack = new();
+        private readonly ConcurrentStack<MeshData> _reBakeMeshDataStack = new();
         
         //Chunk store
         private readonly ConcurrentDictionary<Vector3Int, (Mesh Mesh, Block[,,] Map)> _chunkDataStore = new();
@@ -54,17 +54,17 @@ namespace MapGenerator {
             }
         }
         
-        private Task GetRebakedMeshData() {
+        private Task GetReBakedMeshData() {
             while (true) {
                 if (_isQuit)
                     return null;
-                if (!_rebakeMeshPosStack.TryPop(out var target)) {
+                if (!_reBakeMeshPosStack.TryPop(out var target)) {
                     Thread.Sleep(1);
                     continue;
                 }
 
                 var data = _chunkDataStore[target].Map;
-                _rebakeMeshDataStack.Push(_generator.Generate(data, target));
+                _reBakeMeshDataStack.Push(_generator.Generate(data, target));
             }
         }
         

@@ -34,17 +34,20 @@ namespace MapGenerator {
             return new((int)x, 0, (int)z);
         }
         
-        public static Vector3 GetChunkLocalPos(MapGenerationArgs args, Vector3 pPos) {
-            var chunk = GetChunkIdx(args, pPos);
+        public static Vector3Int GetChunkPos(MapGenerationArgs args, Vector3 pPos, out Vector3Int pChunkIdx) {
+            pChunkIdx = GetChunkIdx(args, pPos);
             var temp = Vector3.zero;
-            
-            temp.x = chunk.x - 0.5f;
-            temp.z = chunk.z - 0.5f;
+                    
+            temp.x = pChunkIdx.x - 0.5f;
+            temp.z = pChunkIdx.z - 0.5f;
             temp *= args.ChunkLength;
             pPos -= temp;
-            
-            return pPos;
+                    
+            return pPos.ToVec3Int();
         }
-        
+
+        public static Vector3 GetChunkLocalPos(MapGenerationArgs args, Vector3 pPos) =>
+            GetChunkPos(args, pPos, out var _);
+
     }
 }

@@ -47,7 +47,42 @@ namespace MapGenerator {
             for (int i = 0; i < _chunkDataStore[pos].Map.GetLength(2); i++) {
                 _chunkDataStore[pos].Map[i, 0, i] = Block.Air;
             }
-            _rebakeMeshPosStack.Push(pos);
+            _reBakeMeshPosStack.Push(pos);
+        }
+
+        //return changed chunk idx
+        private List<Vector3Int> SetBlock(Vector3Int pChunk, Vector3Int pPos, Block pTarget) {
+            var targetChunks = new List<Vector3Int>();
+            targetChunks.Add(pChunk);
+            
+            Debug.Log($"{pChunk} - {pPos}");
+            _chunkDataStore[pChunk].Map[pPos.x, pPos.y, pPos.z] = pTarget;
+            if (pPos.x == 0) {
+                var newPos = pChunk;
+                newPos.x--;
+                _chunkDataStore[newPos].Map[Args.ChunkLength, pPos.y, pPos.z] = pTarget;
+                targetChunks.Add(newPos);
+            }
+            if (pPos.z == 0) {
+                var newPos = pChunk;
+                newPos.z--;
+                _chunkDataStore[newPos].Map[pPos.x, pPos.y, Args.ChunkLength] = pTarget;
+                targetChunks.Add(newPos);
+            }
+            return targetChunks;
+        }
+        
+        public void UpdateBlock(params (Vector3 Pos, Block Block)[] pNewDatas) {
+            var targetChunks = new HashSet<Vector3Int>();
+            foreach (var data in pNewDatas) {
+                var pos = Chunk.GetChunkPos(Args, data.Pos, out var chunkIdx);
+                foreach(var targetChunkIdx in SetBlock(chunkIdx, pos, data.Block))
+                    targetChunks.Add(targetChunkIdx);
+            }
+
+            foreach (var chunk in targetChunks) {
+                _reBakeMeshPosStack.Push(chunk);
+            }
         }
 
         public bool IsLoadedChunk(Vector3Int pPos) {
@@ -63,6 +98,7 @@ namespace MapGenerator {
 
             var chunk = Chunk.GetChunkIdx(Args, pPos);
             var chunkPos = Chunk.GetChunkLocalPos(Args, pPos).ToVec3Int();
+            
             if (!_chunkDataStore.TryGetValue(chunk, out var chunkData))
                 return Block.Dirty;
             
@@ -154,7 +190,7 @@ namespace MapGenerator {
             _chunkParent = chunkParent.transform;
 
             Init();
-            Task.Run(GetRebakedMeshData);
+            Task.Run(GetReBakedMeshData);
 #if UNITY_EDITOR
             _tasks = new Task[_meshThreadCnt + _mapThreadCnt];
             for (int i = 0; i < _mapThreadCnt; i++) {
@@ -185,8 +221,8 @@ namespace MapGenerator {
             if (Player == null && _bakeCnt >= (2 * SIZE + 1) * (2 * SIZE + 1))
                 SpawnPlayer();
             
-            while (_rebakeMeshDataStack.Count != 0) {
-                if (_rebakeMeshDataStack.TryPop(out var value)) {
+            while (_reBakeMeshDataStack.Count != 0) {
+                if (_reBakeMeshDataStack.TryPop(out var value)) {
                     Debug.Log($"refresh: {value.Idx}");
                     RegisterMesh(value);
                 }
