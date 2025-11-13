@@ -1,9 +1,9 @@
-Shader "Custom/SurfaceTiling" {
+﻿Shader "Custom/SurfaceTiling" {
     
     Properties
     {
         _Size ("Size", Vector) = (0,0,0,0)
-        _Color ("Size", Color) = (0,0,0,0)
+        _Color ("Color", Color) = (0,0,0,0)
         _MainTex ("Albedo (RGB)", 2D) = "white" {}
     }
     SubShader

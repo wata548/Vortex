@@ -55,7 +55,6 @@ namespace MapGenerator {
             var targetChunks = new List<Vector3Int>();
             targetChunks.Add(pChunk);
             
-            Debug.Log($"{pChunk} - {pPos}");
             _chunkDataStore[pChunk].Map[pPos.x, pPos.y, pPos.z] = pTarget;
             if (pPos.x == 0) {
                 var newPos = pChunk;

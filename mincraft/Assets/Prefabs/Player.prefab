@@ -189,4 +189,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _selectBoxPrefab: {fileID: 6421002237424396998, guid: fd5c4f50acc68be4b85f945c208d7486, type: 3}
-  _breakEffectMaterial: {fileID: 2100000, guid: 979d9eb52ae719c4d8237def5d7d69f6, type: 2}
+  _breakProcessMaterial: {fileID: 2100000, guid: 979d9eb52ae719c4d8237def5d7d69f6, type: 2}
+  _breakParticleMaterial: {fileID: 2100000, guid: 856ba78423ba354449c6ce94f8d7b095, type: 2}
+  _breakHParticlePrefab: {fileID: 1022853327879778314, guid: 399fda3c78ad863449920c62e30b6277, type: 3}
+  _breakVParticlePrefab: {fileID: 1022853327879778314, guid: 2635f245b6d7ec7449169ccdb2e2d019, type: 3}
