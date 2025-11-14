@@ -12,6 +12,7 @@ namespace MapGenerator {
         public int Octave;
         public float Interval;
         public float CaveRange;
+        public int TreeTryCount;
         
         public int ChunkLength => (int)(ChunkRange / Interval);
         public int ChunkHeight => BaseHeight + HeightLimit + IntervalHeight;
@@ -24,7 +25,8 @@ namespace MapGenerator {
             int pChunkRange = 1,
             float  pInterval = 0.0625f,
             int pOctave = 1,
-            float pCaveRange = 0.3f
+            float pCaveRange = 0.3f,
+            int pTreeTryCnt = 5
         ) {
             IntervalHeight = pIntervalHeight;
             BaseHeight = pBaseHeight;
@@ -34,6 +36,7 @@ namespace MapGenerator {
             Interval = pInterval;
             Octave = pOctave;
             CaveRange = pCaveRange;
+            TreeTryCount = pTreeTryCnt;
         }
     }
 }

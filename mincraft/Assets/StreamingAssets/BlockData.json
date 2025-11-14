@@ -13,5 +13,11 @@
   ],
   "Stone": [
     "BreakTime=7"
-  ] 
+  ],
+  "TreeBlock": [
+    "BreakTime=2.5"
+  ],
+  "Leaf": [
+    "BreakTime=0.5"
+  ]
 }

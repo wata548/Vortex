@@ -8,12 +8,19 @@
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        Tags {
+            "Queue"="Transparent"
+            "RenderType"="Transparent"
+        }
         LOD 200
-
+        
+        Pass {
+            ColorMask 0
+        }
+        
         CGPROGRAM
         #pragma vertex vert
-        #pragma surface surf Standard fullforwardshadows
+        #pragma surface surf Standard fullforwardshadows alpha:auto
 
         #pragma target 3.0
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Entity.Enemy;
 using Extension;
 using UnityEngine;
 
@@ -22,9 +23,39 @@ namespace MapGenerator {
         
         //Chunk store
         private readonly ConcurrentDictionary<Vector3Int, (Mesh Mesh, Block[,,] Map)> _chunkDataStore = new();
-        private readonly Queue<Vector3Int> _chunkStoreHistory = new();
+        
+        private readonly ConcurrentQueue<Queue<(Vector3Int Chunk, Vector3Int Pos, Block Block)>> _paintingTempData = new();
+        private readonly Dictionary<Vector3Int, Queue<(Vector3Int Pos, Block Block)>> _paintingData = new();
         
        //==================================================||Methods 
+       private void PaintOtherChunk() {
+
+           while (_paintingTempData.Count > 0) {
+               _paintingTempData.TryDequeue(out var queue);
+               while (queue.Count > 0) {
+                   var data = queue.Dequeue();
+                   _paintingData.TryAdd(data.Chunk, new());
+                   _paintingData[data.Chunk].Enqueue((data.Pos, data.Block));
+               }
+           }
+           
+           var targetChunks = new HashSet<Vector3Int>();
+           foreach (var targetChunk in _paintingData) {
+               if(!_chunkDataStore.ContainsKey(targetChunk.Key) || _chunkDataStore[targetChunk.Key].Mesh == null)
+                   continue;
+
+               foreach (var data in targetChunk.Value) {
+                   _chunkDataStore[targetChunk.Key].Map[data.Pos.x, data.Pos.y, data.Pos.z] = data.Block;
+               }
+               targetChunks.Add(targetChunk.Key);
+           }
+
+           foreach (var chunk in targetChunks) {
+               _paintingData.Remove(chunk);
+               _generateMeshPosStack.Push(chunk);
+           }
+       }
+       
         private Task GetMapData() {
             while (true) {
                 if (_isQuit)
@@ -35,7 +66,8 @@ namespace MapGenerator {
                     continue;
                 }
 
-                _chunkDataStore.TryAdd(target, (null, _generator.PerlinMapGeneration(Args, target)));
+                _chunkDataStore.TryAdd(target, (null, _generator.PerlinMapGeneration(Args, target, out var updateTarget)));
+                _paintingTempData.Enqueue(updateTarget);
                 _generateMeshPosStack.Push(target);
             }
         }
@@ -76,11 +108,7 @@ namespace MapGenerator {
             mesh.RecalculateBounds();
             mesh.RecalculateNormals();
             
-            _chunkStoreHistory.Enqueue(pData.Idx);
             _chunkDataStore[pData.Idx] = (mesh, pData.Map);
-            while (_chunkStoreHistory.Count > MESH_RESTORE_LIMIT) {
-                _chunkDataStore.Remove(_chunkStoreHistory.Dequeue(), out var _);
-            }
         }
 
         private void LoadAllMesh() {

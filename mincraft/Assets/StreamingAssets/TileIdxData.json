@@ -1,5 +1,7 @@
 ﻿{
-  "Air": [],
+  "Air": [
+    {"Dir": "Up", "PosX": 14, "PosY": 15}
+  ],
   "Base": [
     {"Dir": "Up", "PosX": 15, "PosY": 15}
   ],
@@ -13,5 +15,13 @@
   ],
   "Stone": [
     {"Dir": "Up", "PosX": 3, "PosY": 0}
+  ],
+  "TreeBlock": [
+    {"Dir": "Up", "PosX": 5, "PosY": 0},
+    {"Dir": "Side", "PosX": 4, "PosY": 0},
+    {"Dir": "Down", "PosX": 5, "PosY": 0}
+  ],
+  "Leaf": [
+    {"Dir": "Up", "PosX": 6, "PosY": 0}
   ]
 }

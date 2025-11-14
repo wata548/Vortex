@@ -15,5 +15,7 @@ namespace MapGenerator {
         Grass,
         Dirty,
         Stone,
+        TreeBlock,
+        Leaf,
     }
 }

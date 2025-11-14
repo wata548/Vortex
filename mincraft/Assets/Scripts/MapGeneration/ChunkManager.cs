@@ -216,7 +216,7 @@ namespace MapGenerator {
 #if UNITY_EDITOR
             Log();
 #endif
-            
+            PaintOtherChunk();
             if (Player == null && _bakeCnt >= (2 * SIZE + 1) * (2 * SIZE + 1))
                 SpawnPlayer();
             
