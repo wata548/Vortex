@@ -12,7 +12,7 @@ namespace MapGenerator {
     public partial class ChunkManager: MonoSingleton<ChunkManager> {
         
         //==================================================||Constants 
-        private const int SIZE = 1;
+        private const int SIZE = 3;
         private const int MESH_RESTORE_LIMIT = 1200;
         private static readonly Vector3 CAMERA_LOCAL_POS = new(0, 0.25f, 0);
         
@@ -40,15 +40,6 @@ namespace MapGenerator {
         
         private bool _isQuit = false;
         //==================================================||Methods 
-
-        [TestMethod]
-        private void Test() {
-            var pos = _chunks[SIZE, SIZE].Idx;
-            for (int i = 0; i < _chunkDataStore[pos].Map.GetLength(2); i++) {
-                _chunkDataStore[pos].Map[i, 0, i] = Block.Air;
-            }
-            _reBakeMeshPosStack.Push(pos);
-        }
 
         //return changed chunk idx
         private List<Vector3Int> SetBlock(Vector3Int pChunk, Vector3Int pPos, Block pTarget) {
