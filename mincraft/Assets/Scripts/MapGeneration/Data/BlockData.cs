@@ -22,16 +22,20 @@ namespace MapGenerator {
         
        //==================================================||Fields 
         private static readonly IReadOnlyDictionary<BlockTag, Type> _tagType = new Dictionary<BlockTag, Type>() {
-            { BlockTag.BreakTime, typeof(float) }
+            { BlockTag.BreakTime, typeof(float) },
+            { BlockTag.Projected, typeof(bool) },
         };
+
+        private static object _lock = new();
 
         private static IReadOnlyDictionary<Block, IReadOnlyDictionary<BlockTag, Object>> _tagDatas = null;
 
         
-        public static Object GetData(Block pBlock, BlockTag pTag) {
+        public static Object GetData(this Block pBlock, BlockTag pTag) {
             
-            SetUp();
-            return _tagDatas[pBlock][pTag];
+            lock(_lock)
+                SetUp();
+            return _tagDatas[pBlock].GetValueOrDefault(pTag, null);
         }
         
         private static void SetUp() {

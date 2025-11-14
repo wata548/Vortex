@@ -5,8 +5,15 @@ using Random = System.Random;
 namespace MapGenerator {
     public partial class MapMeshGenerator {
 
+       //==================================================||Constances 
+        private const int MIN_TREE_HEIGHT = 4;
+        private const int MAX_TREE_HEIGHT = 4;
+        private const float LEAF_VERTEX_ERASE_RATIO = 0.5f; 
+        private static readonly int[] LEAF_RADIUSES = {2, 1};
+        private static readonly int[] LEAF_HEIGHTS = {2, 2};
         
-        public Block[,,] PerlinMapGeneration(MapGenerationArgs pArgs, Vector3Int pChunkIdx, out Queue<(Vector3Int Chunk, Vector3Int Pos, Block Block)> paintingTarget) {
+       //==================================================||Methods 
+        public Block[,,] PerlinMapGeneration(MapGenerationArgs pArgs, Vector3Int pChunkIdx, out Queue<PaintInfo> paintingTarget) {
             var map = new Block[pArgs.ChunkLength + 1, pArgs.ChunkHeight, pArgs.ChunkLength + 1];
             
             pChunkIdx *= pArgs.ChunkRange;
@@ -54,16 +61,23 @@ namespace MapGenerator {
             }
             var treePosRandom = new Random((int)(pArgs.Seed * pChunkIdx.x) ^ (int)(pChunkIdx.z + pArgs.Seed));
             for (int i = 0; i < pArgs.TreeTryCount; i++) {
-                var posX = treePosRandom.Next(0, pArgs.ChunkLength);
-                var posZ = treePosRandom.Next(0, pArgs.ChunkLength);
+                var x = treePosRandom.Next(0, pArgs.ChunkLength);
+                var y = treePosRandom.Next(0, pArgs.ChunkLength);
+                var z = treePosRandom.Next(MIN_TREE_HEIGHT, MAX_TREE_HEIGHT + 1);
+                GenerateTree(x, y, z, paintingTarget);
+            }
+                        
+            return map;
+
+            void GenerateTree(int pX, int pY, int height, Queue<PaintInfo> pPaintQueue) {
                 var posY = 0;
-                    
+                                    
                 var isPlaceable = false;
                 for (int j = pArgs.ChunkHeight - 1; j > -1; j--) {
-                    var block = map[posX, j, posZ];
+                    var block = map[pX, j, pY];
                     if (block == Block.Air)
                         continue;
-                    
+                                    
                     if (block == Block.Grass) {
                         isPlaceable = true;
                         posY = j + 1;
@@ -71,28 +85,73 @@ namespace MapGenerator {
                     else
                         break;
                 }
-                if(!isPlaceable)
-                    continue;
-                    
-                for (int j = 0; j < 4 && posY + j < pArgs.ChunkHeight; j++)
-                    SetBlock(posX, posY + j, posZ, Block.TreeBlock, paintingTarget);
-                SetBlock(posX, posY + 4, posZ, Block.Leaf, paintingTarget);
+
+                if (!isPlaceable)
+                    return;
+                                    
+                for (int j = 0; j < height && posY + j < pArgs.ChunkHeight; j++)
+                    SetBlock(pX, posY + j, pY, Block.TreeBlock, pPaintQueue);
+
+                var r = new Random((pX + pChunkIdx.x * pArgs.ChunkLength) * 100 + pY + pChunkIdx.y * pArgs.ChunkLength);
+                var sum = -LEAF_HEIGHTS[0];
+                for (int place = 0; place < LEAF_HEIGHTS.Length; place++) {
+                    for (int leafY = 0; leafY < LEAF_HEIGHTS[place]; leafY++) {
+                        for (int leafX = -LEAF_RADIUSES[place]; leafX <= LEAF_RADIUSES[place]; leafX++) {
+                            for (int leafZ = -LEAF_RADIUSES[place]; leafZ <= LEAF_RADIUSES[place]; leafZ++) {
+
+                                //not vertex
+                                if ((leafX != -LEAF_RADIUSES[place] && leafX != LEAF_RADIUSES[place]) 
+                                    || (leafZ != -LEAF_RADIUSES[place] && leafZ != LEAF_RADIUSES[place])) 
+                                {
+                                    SetBlock(pX + leafX, posY + height + leafY + sum, pY + leafZ, Block.Leaf, pPaintQueue);
+                                    continue;
+                                }
+                                
+                                //top vertex
+                                if (place == LEAF_HEIGHTS.Length - 1 && leafY == LEAF_HEIGHTS[place] - 1) {
+                                    continue;
+                                }
+                                
+                                if(r.NextDouble() > LEAF_VERTEX_ERASE_RATIO)
+                                    SetBlock(pX + leafX, posY + height + leafY + sum, pY + leafZ, Block.Leaf, pPaintQueue);
+                            }
+                        }
+                    }
+                
+                    sum += LEAF_RADIUSES[place];
+                }
             }
-                        
-            return map;
             
-            void SetBlock(int pX, int pY, int pZ, Block pBlock, Queue<(Vector3Int Chunk, Vector3Int Pos, Block Block)> targetQueue) {
-            
-                map[pX, pY, pZ] = pBlock;
+            void SetBlock(int pX, int pY, int pZ, Block pBlock, Queue<PaintInfo> pPaintQueue, bool pForce = false) {
+
+                var chunkIdx = pChunkIdx;
+                chunkIdx += new Vector3Int((int)((float)pX / pArgs.ChunkLength), 0, (int)((float)pZ / pArgs.ChunkLength));
+                pX %= pArgs.ChunkLength;
+                pZ %= pArgs.ChunkLength;
+                if (pX < 0) {
+                    pX += pArgs.ChunkLength;
+                    chunkIdx.x--;
+                }
+                if (pZ < 0) {
+                    pZ += pArgs.ChunkLength;
+                    chunkIdx.z--;
+                }
+
+                if (chunkIdx == pChunkIdx) {
+                    if(pForce || map[pX, pY, pZ] == Block.Air)
+                        map[pX, pY, pZ] = pBlock;
+                }
+                else {
+                    pPaintQueue.Enqueue(new(chunkIdx, new(pX, pY, pZ), pBlock, pForce));
+                }
+                
                 if (pX == 0) {
-                    var targetIdx = pChunkIdx + Vector3Int.left;
-                    var pos = new Vector3Int(pArgs.ChunkLength, pY, pZ);
-                    targetQueue.Enqueue((targetIdx, pos, pBlock));
+                    var targetIdx = chunkIdx + Vector3Int.left;
+                    pPaintQueue.Enqueue(new(targetIdx, new(pArgs.ChunkLength, pY, pZ), pBlock, pForce));
                 }
                 if (pZ == 0) {
-                    var targetIdx = pChunkIdx + Vector3Int.back;
-                    var pos = new Vector3Int(pX, pY, pArgs.ChunkLength);
-                    targetQueue.Enqueue((targetIdx, pos, pBlock));
+                    var targetIdx = chunkIdx + Vector3Int.back;
+                    pPaintQueue.Enqueue(new(targetIdx, new(pX, pY, pArgs.ChunkLength), pBlock, pForce));
                 }
                                 
             }

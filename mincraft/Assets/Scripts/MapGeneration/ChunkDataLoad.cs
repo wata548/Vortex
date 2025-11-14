@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Entity.Enemy;
 using Extension;
 using UnityEngine;
 
@@ -24,8 +23,8 @@ namespace MapGenerator {
         //Chunk store
         private readonly ConcurrentDictionary<Vector3Int, (Mesh Mesh, Block[,,] Map)> _chunkDataStore = new();
         
-        private readonly ConcurrentQueue<Queue<(Vector3Int Chunk, Vector3Int Pos, Block Block)>> _paintingTempData = new();
-        private readonly Dictionary<Vector3Int, Queue<(Vector3Int Pos, Block Block)>> _paintingData = new();
+        private readonly ConcurrentQueue<Queue<PaintInfo>> _paintingTempData = new();
+        private readonly Dictionary<Vector3Int, Queue<PaintInfo>> _paintingData = new();
         
        //==================================================||Methods 
        private void PaintOtherChunk() {
@@ -35,7 +34,7 @@ namespace MapGenerator {
                while (queue.Count > 0) {
                    var data = queue.Dequeue();
                    _paintingData.TryAdd(data.Chunk, new());
-                   _paintingData[data.Chunk].Enqueue((data.Pos, data.Block));
+                   _paintingData[data.Chunk].Enqueue(data);
                }
            }
            
@@ -45,7 +44,8 @@ namespace MapGenerator {
                    continue;
 
                foreach (var data in targetChunk.Value) {
-                   _chunkDataStore[targetChunk.Key].Map[data.Pos.x, data.Pos.y, data.Pos.z] = data.Block;
+                   if(data.Force || _chunkDataStore[targetChunk.Key].Map[data.Pos.x, data.Pos.y, data.Pos.z] == Block.Air)
+                       _chunkDataStore[targetChunk.Key].Map[data.Pos.x, data.Pos.y, data.Pos.z] = data.Block;
                }
                targetChunks.Add(targetChunk.Key);
            }

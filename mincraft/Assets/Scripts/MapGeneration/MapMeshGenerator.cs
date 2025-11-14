@@ -38,6 +38,7 @@ namespace MapGenerator {
             var vertices = new List<Vector3>(1500);
             var uvs = new List<Vector4>();
 
+            var isProjected = new Func<int, int, int, bool>((x, y, z) => ((bool?)pMap[x, y, z].GetData(BlockTag.Projected) ?? false));
             for (int y = 0; y < limitY; y++) {
                 for (int x = 0; x < limitX; x++) {
                     for (int z = 0; z < limitZ; z++) {
@@ -46,29 +47,30 @@ namespace MapGenerator {
 
                         //generate direction mesh
                         GenerateX(LEFT_FACE_PIVOTS, CheckDirection.Left,
-                            (x, y, z) => z == limitZ - 1 || x == 0 || pMap[x - 1, y, z] != Block.Air,
+                            (x, y, z) => z == limitZ - 1 || x == 0 || !isProjected(x - 1, y, z),
                             x, y, z, FaceType.Side
                         );
                         GenerateX(RIGHT_FACE_PIVOTS, CheckDirection.Right,
-                            (x, y, z) => z == limitZ - 1 || x == limitX - 1 || pMap[x + 1, y, z] != Block.Air,
+                            (x, y, z) => z == limitZ - 1 || x == limitX - 1 || !isProjected(x + 1, y, z),
                             x, y, z, FaceType.Side
                         );
 
                         GenerateY(UP_FACE_PIVOTS, CheckDirection.Up,
                             (x, y, z) =>
-                                x == limitX - 1 || z == limitZ - 1 || y != limitY - 1 && pMap[x, y + 1, z] != Block.Air,
+                                x == limitX - 1 || z == limitZ - 1 || y != limitY - 1 && !isProjected(x, y + 1, z),
                             x, y, z, FaceType.Up
                         );
                         GenerateY(DOWN_FACE_PIVOTS, CheckDirection.Down,
-                            (x, y, z) => x == limitX - 1 || z == limitZ - 1 || y != 0 && pMap[x, y - 1, z] != Block.Air,
+                            (x, y, z) =>
+                                x == limitX - 1 || z == limitZ - 1 || y != 0 && !isProjected(x, y - 1, z),
                             x, y, z, FaceType.Down
                         );
                         GenerateZ(FRONT_FACE_PIVOTS, CheckDirection.Front,
-                            (x, y, z) => x == limitX - 1 || z == 0 || pMap[x, y, z - 1] != Block.Air,
+                            (x, y, z) => x == limitX - 1 || z == 0 || !isProjected(x, y, z - 1),
                             x, y, z, FaceType.Side
                         );
                         GenerateZ(BEHIND_FACE_PIVOTS, CheckDirection.Behind,
-                            (x, y, z) => x == limitX - 1 || z == limitZ - 1 || pMap[x, y, z + 1] != Block.Air,
+                            (x, y, z) => x == limitX - 1 || z == limitZ - 1 || !isProjected(x, y, z + 1),
                             x, y, z, FaceType.Side
                         );
                     }

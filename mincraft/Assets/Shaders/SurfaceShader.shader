@@ -14,13 +14,9 @@
         }
         LOD 200
         
-        Pass {
-            ColorMask 0
-        }
-        
         CGPROGRAM
         #pragma vertex vert
-        #pragma surface surf Standard fullforwardshadows alpha:auto
+        #pragma surface surf Standard fullforwardshadows alpha:clip
 
         #pragma target 3.0
 
@@ -52,6 +48,7 @@
             fixed4 c = tex2Dgrad(_MainTex, atlasUv, ddx(atlasUv * _Size), ddy(atlasUv * _Size)) * _Color;
             o.Albedo = c.rgb;
             o.Alpha = c.a;
+            clip(o.Alpha - 0.5);
         }
         ENDCG
     }

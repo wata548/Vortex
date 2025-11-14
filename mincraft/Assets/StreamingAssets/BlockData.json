@@ -1,6 +1,7 @@
 ﻿{
   "Air": [
-    "BreakTime=2147483648"
+    "BreakTime=2147483648",
+    "Projected=true"
   ],
   "Base": [
     "BreakTime=2147483647"
@@ -18,6 +19,7 @@
     "BreakTime=2.5"
   ],
   "Leaf": [
-    "BreakTime=0.5"
+    "BreakTime=0.5",
+    "Projected=true"
   ]
 }
