@@ -193,3 +193,4 @@ MonoBehaviour:
   _breakParticleMaterial: {fileID: 2100000, guid: 856ba78423ba354449c6ce94f8d7b095, type: 2}
   _breakHParticlePrefab: {fileID: 1022853327879778314, guid: 399fda3c78ad863449920c62e30b6277, type: 3}
   _breakVParticlePrefab: {fileID: 1022853327879778314, guid: 2635f245b6d7ec7449169ccdb2e2d019, type: 3}
+  _breakParticlePrefab: {fileID: 8038462145849465038, guid: ed2779136d23c724599bf70f62af4f64, type: 3}

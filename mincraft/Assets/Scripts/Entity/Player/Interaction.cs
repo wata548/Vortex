@@ -20,6 +20,7 @@ namespace Player {
         [SerializeField] private Material _breakParticleMaterial;
         [SerializeField] private ParticleSystem _breakHParticlePrefab;
         [SerializeField] private ParticleSystem _breakVParticlePrefab;
+        [SerializeField] private ParticleSystem _breakParticlePrefab;
         
         private CameraControl _cameraControl;
         
@@ -32,6 +33,7 @@ namespace Player {
         private GameObject _selectBox;
         private ParticleSystem _breakHParticle;
         private ParticleSystem _breakVParticle;
+        private ParticleSystem _breakParticle;
 
         private IPlayerInputSetting _input;
         //==================================================||Methods 
@@ -86,6 +88,7 @@ namespace Player {
             var folder = new GameObject("Effects").transform;
             _breakHParticle = Instantiate(_breakHParticlePrefab, folder);
             _breakVParticle = Instantiate(_breakVParticlePrefab, folder);
+            _breakParticle = Instantiate(_breakParticlePrefab, folder);
         }
 
         private void Update() {
@@ -109,7 +112,9 @@ namespace Player {
                 _breakProcessMaterial.SetFloat("_BreakProcess", process);
 
                 if (process >= 1) {
-                    
+
+                    _breakParticle.transform.position = _point + Vector3.one * 0.5f;
+                    _breakParticle.Play();
                     ChunkManager.Instance.UpdateBlock((_point + Vector3.one * 0.5f, Block.Air));
                     _isShow = false;
                     
