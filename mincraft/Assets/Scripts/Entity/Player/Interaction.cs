@@ -1,4 +1,5 @@
-﻿using Extension;
+﻿using Entity;
+using Extension;
 using MapGenerator;
 using MapGenerator.Tile;
 using UnityEngine;
@@ -31,11 +32,16 @@ namespace Player {
         private GameObject _selectBox;
         private ParticleSystem _breakHParticle;
         private ParticleSystem _breakVParticle;
-        
-        //==================================================||Methods 
-        public void Interact() {
 
-            var cameraTransform = _cameraControl.CameraTransfom;
+        private IPlayerInputSetting _input;
+        //==================================================||Methods 
+        public void SetUp(IPlayerInputSetting pInput) {
+            _input = pInput;
+        }
+        
+        private void Interact() {
+
+            var cameraTransform = _cameraControl.CameraTransform;
             _isShow = Physics.Raycast(cameraTransform.position, cameraTransform.forward, out var hit, INTERACT_RANGE, LayerMask.GetMask("Ground"));
             if (!_isShow)
                 return;
@@ -94,11 +100,11 @@ namespace Player {
                 return;
             }
             
-            if (_isShow && Input.GetMouseButton(0)) {
+            if (_isShow && _input.BreakBlock) {
                 BreakParticleControl();    
                 
                 _interactionTime += Time.deltaTime;
-                var targetTime = (float)BlockData.GetData(_targetBlock, BlockTag.BreakTime);
+                var targetTime = (float)_targetBlock.GetData(BlockTag.BreakTime);
                 var process = _interactionTime / targetTime;
                 _breakProcessMaterial.SetFloat("_BreakProcess", process);
 

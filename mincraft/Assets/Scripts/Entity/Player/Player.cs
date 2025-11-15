@@ -9,6 +9,8 @@ namespace Player {
     [RequireComponent(typeof(PlayerMovement))]
     [RequireComponent(typeof(Interaction))]
     public class Player: MonoBehaviour, IEntity {
+        
+        public PlayerMovement Movement { get; private set; }
         public bool IsAlive { get; }
         public int MaxHp { get; }
         public int Hp { get; }
@@ -42,9 +44,7 @@ namespace Player {
         }
 
         private void Awake() {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-
+            Movement = GetComponent<PlayerMovement>();
         }
     }
 }

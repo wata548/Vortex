@@ -55,11 +55,11 @@ namespace Entity {
         }
         
         //==================================================||Unity 
-        private void Awake() {
+        protected void Awake() {
             _rigidbody = GetComponent<Rigidbody>();
         }
 
-        private void Update() {
+        protected void Update() {
             
             var delta = InputPostProcessing();
             var velocity = _rigidbody.velocity;

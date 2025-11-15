@@ -1,16 +1,19 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Player {
+namespace Entity {
 
     public interface IInputSetting {
         Vector3 InputDirection { get; }
         bool IsJumpStart { get; }
     }
 
-    [Serializable]
-    public abstract class ScriptableInputSetting : ScriptableObject, IInputSetting {
-        public abstract Vector3 InputDirection { get; }
-        public abstract bool IsJumpStart { get; }
+    public interface ICameraInputSetting {
+        Vector2 CameraDirection { get; }
+    }
+
+    public interface IPlayerInputSetting {
+        bool BreakBlock { get; }
+        bool Menu { get; }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using Entity;
 
 namespace Player {
     public class CameraControl: MonoBehaviour {
@@ -8,12 +9,21 @@ namespace Player {
         
         [SerializeField] private Vector2 _initPos = Vector2.zero;
         private Camera _camera = null;
-        public Transform CameraTransfom => _camera.transform;
-        
+        private ICameraInputSetting _input;
+        public Transform CameraTransform => _camera.transform;
+
+        private float _sensitivity = 1f;
         //==================================================||Methods 
+        public void SetSensitivity(float pValue) {
+            _sensitivity = pValue;
+        }
+        
+        public void SetUp(ICameraInputSetting pInput) =>
+            _input = pInput;
+        
         private void CameraUpdate() {
 
-            var mouseDelta = new Vector2(Input.GetAxisRaw("Mouse X"), -Input.GetAxisRaw("Mouse Y"));
+            var mouseDelta = _input.CameraDirection * _sensitivity;
             var rotation = transform.rotation.eulerAngles;
             rotation.y += mouseDelta.x;
             
@@ -30,6 +40,9 @@ namespace Player {
         }
 
         private void Update() {
+            if (Time.timeScale == 0)
+                return;
+            
             CameraUpdate();
         }
     }
