@@ -60,7 +60,7 @@ namespace Player {
         }
 
         private void BreakParticleControl() {
-            var idx = TileIdxData.Get(_targetBlock, TileIdxData.FaceType.Side);
+            var idx = TileIdxData.GetFace(_targetBlock, TileIdxData.FaceType.Side);
             _breakParticleMaterial.SetVector("_Pos", new(idx.X, idx.Y));
             var direction = (_rawPoint - _point - Vector3.one * 0.5f).GetDirection();
             var pos = _point + Vector3.one * 0.5f + direction * 0.5f;

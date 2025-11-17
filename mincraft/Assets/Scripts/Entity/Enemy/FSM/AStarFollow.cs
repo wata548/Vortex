@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Extension;
 using FSM;
 using MapGenerator;
+using Player;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -149,11 +150,11 @@ namespace Entity.Enemy.FSM {
 
         public void Update(EnemyBase pTarget) {
 
-            if (ChunkManager.Instance.Player == null)
+            if (PlayerEntity.IsExist)
                 return;
             
             _procedureTime -= Time.deltaTime;
-            var playerPos = ChunkManager.Instance.Player.transform.position;
+            var playerPos = PlayerEntity.Instance.transform.position;
             var dist = (playerPos - pTarget.transform.position);
 
             if (dist.magnitude - pTarget.transform.localScale.z / 2 <= _attackRange) {

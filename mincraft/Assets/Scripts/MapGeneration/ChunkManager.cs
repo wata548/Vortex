@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Entity.Enemy;
 using Extension;
-using Extension.Test;
+using Player;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace MapGenerator {
     
@@ -24,15 +22,13 @@ namespace MapGenerator {
         
         //Prefabs
         [SerializeField] private Chunk _chunkPrefab;
-        [SerializeField] private Player.Player _playerPrefab;
-        public Player.Player Player { get; private set; } = null;
+        [SerializeField] private PlayerEntity _playerPrefab;
         
         //Generator Information
         private MapMeshGenerator _generator;
         [field: SerializeField] public MapGenerationArgs Args { get; private set; } = new(pOctave:2);
         private Transform _chunkParent;
         private Vector3Int _playerChunk = Vector3Int.zero;
-        private Vector3 _playerChunkPos = Vector3.zero;
         
         //Current Chunk map
         private Chunk[,] _chunks = new Chunk[2 * SIZE + 1, 2 * SIZE + 1];
@@ -96,13 +92,8 @@ namespace MapGenerator {
         }
         
         private void SpawnPlayer() {
-            Player = Instantiate(_playerPrefab);
-            
-            var camera = Camera.main!;
-            camera.transform.SetParent(Player.transform);
-            camera.transform.localPosition = CAMERA_LOCAL_POS;
-            
-            Player.transform.position = Vector3.up * Args.ChunkHeight;
+            var player = Instantiate(_playerPrefab);
+            player.transform.position = Vector3.up * Args.ChunkHeight;
         }
         
         private void Init() {
@@ -122,8 +113,11 @@ namespace MapGenerator {
             }
         }
 
-        private void NewChunksLoad() {
-            var newChunkIdx = Chunk.GetChunkIdx(Args, Player.transform.position);
+        private void SetReadyChunks() {
+            if (!PlayerEntity.IsExist)
+                return;
+            
+            var newChunkIdx = PlayerEntity.Instance.ChunkPos;
             if (newChunkIdx == _playerChunk)
                 return;
 
@@ -208,7 +202,7 @@ namespace MapGenerator {
             Log();
 #endif
             PaintOtherChunk();
-            if (Player == null && _bakeCnt >= (2 * SIZE + 1) * (2 * SIZE + 1))
+            if (!PlayerEntity.IsExist && _bakeCnt >= (2 * SIZE + 1) * (2 * SIZE + 1))
                 SpawnPlayer();
             
             while (_reBakeMeshDataStack.Count != 0) {
@@ -225,12 +219,9 @@ namespace MapGenerator {
                     _bakeCnt++;
                 }
             }
-            LoadAllMesh();
-
-            if (Player != null) {
-                NewChunksLoad();
-                _playerChunkPos = Chunk.GetChunkLocalPos(Args, Player.transform.position);
-            }
+            
+            LoadReadiedMesh();
+            SetReadyChunks();
         }
         
         private void OnApplicationQuit() {

@@ -6,6 +6,8 @@ namespace Extension {
         where T: MonoBehaviour {
 
         private static bool exitMyGame = false;
+
+        public static bool IsExist => Instance != null;
         public static T Instance { get; private set; }
         /// <summary>
         /// Do you use this single on just one scene?

@@ -23,21 +23,21 @@ namespace Test {
             var uvs = new List<Vector4>();
 
             Func<Vector3, Vector4> toUvX = (pivot) => {
-                var (x, y) = TileIdxData.Get(_targetBlock, FaceType.Side);
+                var (x, y) = _targetBlock.GetFace(FaceType.Side);
                 return new Vector4(pivot.z, pivot.y, x, y);
             };
             Func<Vector3, Vector4> toUvZ = (pivot) => {
-                var (x, y) = TileIdxData.Get(_targetBlock, FaceType.Side);
+                var (x, y) = _targetBlock.GetFace(FaceType.Side);
                 return new Vector4(pivot.x, pivot.y, x, y);
             };
             MakeFace(MapMeshGenerator.UP_FACE_PIVOTS,
                 (pivot) => {
-                    var (x, y) = TileIdxData.Get(_targetBlock, FaceType.Up);
+                    var (x, y) = _targetBlock.GetFace(FaceType.Up);
                     return new Vector4(pivot.x, pivot.z, x, y);
                 });
             MakeFace(MapMeshGenerator.DOWN_FACE_PIVOTS,
                 (pivot) => {
-                    var (x, y) = TileIdxData.Get(_targetBlock, FaceType.Down);
+                    var (x, y) = _targetBlock.GetFace(FaceType.Down);
                     return new Vector4(pivot.x, pivot.z, x, y);
                 });
             MakeFace(MapMeshGenerator.LEFT_FACE_PIVOTS, toUvX);

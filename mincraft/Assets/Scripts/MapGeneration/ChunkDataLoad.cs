@@ -111,7 +111,7 @@ namespace MapGenerator {
             _chunkDataStore[pData.Idx] = (mesh, pData.Map);
         }
 
-        private void LoadAllMesh() {
+        private void LoadReadiedMesh() {
             var interval = new Vector3(Args.ChunkLength, 0, Args.ChunkLength);
                     
             foreach (var chunk in _chunks) {

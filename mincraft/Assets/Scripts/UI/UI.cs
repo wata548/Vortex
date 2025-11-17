@@ -1,6 +1,7 @@
 ﻿using System;
 using Entity;
 using MapGenerator;
+using Player;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -24,7 +25,7 @@ namespace DefaultNamespace {
             var type = _isKeyboardType ? "Keyboard" : "Controller";
             _inputTypeShower.text = $"Control Mode: {type}";
             var keyMap = Resources.Load<ScriptableInputSetting>($"{type}KeyMap");
-            ChunkManager.Instance.Player.Movement.SetKeyMap(keyMap);
+            PlayerEntity.Instance.Movement.SetKeyMap(keyMap);
         }
 
         public void ChangeCameraSensitivity() {
@@ -34,7 +35,7 @@ namespace DefaultNamespace {
             var value = _scrollbar.value;
             value *= MAX - MIN;
             value += MIN;
-            ChunkManager.Instance.Player.Movement.SetCameraSensitivity(value);
+            PlayerEntity.Instance.Movement.SetCameraSensitivity(value);
             _sensitivityShower.text = $"{value:N2}";
         }
 

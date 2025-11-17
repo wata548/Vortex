@@ -27,7 +27,7 @@ namespace MapGenerator.Tile {
         private static bool isInited = false;
         private static readonly object _lock = new();
 
-        public static (int X, int Y) Get(Block pBlock, FaceType pFaceType) {
+        public static (int X, int Y) GetFace(this Block pBlock, FaceType pFaceType) {
 
             lock (_lock) {
                 SettUp();

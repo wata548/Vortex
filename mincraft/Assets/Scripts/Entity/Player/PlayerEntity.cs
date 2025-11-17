@@ -1,15 +1,19 @@
 ﻿using System;
 using Entity;
+using Extension;
 using Extension.Test;
 using MapGenerator;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Player {
     
     [RequireComponent(typeof(PlayerMovement))]
     [RequireComponent(typeof(Interaction))]
-    public class Player: MonoBehaviour, IEntity {
-        
+    public class PlayerEntity: MonoSingleton<PlayerEntity>, IEntity {
+
+        //==================================================||Properties 
+        protected override bool IsNarrowSingleton { get; set; } = true;
         public PlayerMovement Movement { get; private set; }
         public bool IsAlive { get; }
         public int MaxHp { get; }
@@ -29,6 +33,10 @@ namespace Player {
             Mathf.FloorToInt(transform.position.z)
         );
 
+        public Vector3Int ChunkPos => 
+            Chunk.GetChunkIdx(ChunkManager.Instance.Args, transform.position);
+        
+        //==================================================||Methods 
         [TestMethod]
         private void CurPos() {
             var pos = Chunk.GetChunkPos(ChunkManager.Instance.Args, transform.position, out var idx);
@@ -36,14 +44,16 @@ namespace Player {
         }
         
         public void GetDamage(int pAmount) {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public void Heal(int pAmount) {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
-
-        private void Awake() {
+        
+        //==================================================||Unity
+        private new void Awake() {
+            base.Awake();
             Movement = GetComponent<PlayerMovement>();
         }
     }

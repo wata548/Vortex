@@ -144,7 +144,7 @@ namespace MapGenerator {
                     vertices.Add(pos + pivot.Multiple(size));
                 }
 
-                var textureIdx = TileIdxData.Get(target, pFace);
+                var textureIdx = target.GetFace(pFace);
                 triangles.AddRange(TRIANGLE_PIVOTS.Select(element => element + startPoint));
                 uvs.AddRange(pPivotList.Select(pivot =>
                     new Vector4(pivot.z * lengthZ, pivot.y * lenghtY, textureIdx.X, textureIdx.Y)));
@@ -206,7 +206,7 @@ namespace MapGenerator {
                     vertices.Add(pos + pivot.Multiple(size));
                 }
 
-                var textureIdx = TileIdxData.Get(target, pFace);
+                var textureIdx = target.GetFace(pFace);
                 triangles.AddRange(TRIANGLE_PIVOTS.Select(element => element + startPoint));
                 uvs.AddRange(pPivotList.Select(pivot =>
                     new Vector4(pivot.x * lengthX, pivot.y * lenghtY, textureIdx.X, textureIdx.Y)));
@@ -268,7 +268,7 @@ namespace MapGenerator {
                     vertices.Add(pos + pivot.Multiple(size));
                 }
 
-                var textureIdx = TileIdxData.Get(target, pFace);
+                var textureIdx = target.GetFace(pFace);
                 triangles.AddRange(TRIANGLE_PIVOTS.Select(element => element + startPoint));
                 uvs.AddRange(pPivotList.Select(pivot =>
                     new Vector4(pivot.x * lengthX, pivot.z * lenghtZ, textureIdx.X, textureIdx.Y)));
