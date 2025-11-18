@@ -1,4 +1,5 @@
 ﻿using Entity;
+using Extension;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -12,6 +13,7 @@ namespace Player {
         [SerializeField] private KeyCode _back = KeyCode.S;
         [SerializeField] private KeyCode _jump = KeyCode.Space;
         [SerializeField] private KeyCode _breakBlock = KeyCode.Mouse0;
+        [SerializeField] private KeyCode _placeBlock = KeyCode.Mouse1;
         [SerializeField] private KeyCode _menu = KeyCode.Escape;
         [SerializeField] private string _cameraYaw = "Mouse X";
         [SerializeField] private string _cameraPitch = "Mouse Y";
@@ -38,6 +40,9 @@ namespace Player {
             }
         }
         public override bool BreakBlock => Input.GetKey(_breakBlock);
+        public override bool PlaceBlock => Input.GetKeyDown(_placeBlock);
+
+        public override int SelectItemSlot => -(int)Input.mouseScrollDelta.y.Sign();
         public override bool Menu => Input.GetKeyDown(_menu);
     }
 }

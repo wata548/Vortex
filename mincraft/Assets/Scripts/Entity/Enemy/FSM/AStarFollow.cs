@@ -150,7 +150,7 @@ namespace Entity.Enemy.FSM {
 
         public void Update(EnemyBase pTarget) {
 
-            if (PlayerEntity.IsExist)
+            if (!PlayerEntity.IsExist)
                 return;
             
             _procedureTime -= Time.deltaTime;
@@ -192,6 +192,7 @@ namespace Entity.Enemy.FSM {
                 delta.y = 0;
                 
                 _movement.SetDirection(delta);
+                Debug.Log(delta);
             }
         }
 

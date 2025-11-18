@@ -7,7 +7,7 @@ namespace Player {
         
         //==================================================||Fields 
         
-        [SerializeField] private Vector2 _initPos = Vector2.zero;
+        [SerializeField] private Vector3 _initPos = Vector2.zero;
         private Camera _camera = null;
         private ICameraInputSetting _input;
         public Transform CameraTransform => _camera.transform;

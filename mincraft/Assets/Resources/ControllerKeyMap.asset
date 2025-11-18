@@ -18,4 +18,7 @@ MonoBehaviour:
   _cameraPitch: Vertical2
   _jump: 330
   _breakBlock: 335
+  _placeBlock: 334
+  _leftItemSlot: 332
+  _rightItemSlot: 331
   _menu: 336

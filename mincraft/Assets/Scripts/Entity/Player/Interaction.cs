@@ -1,5 +1,6 @@
 ﻿using Entity;
 using Extension;
+using Inventory;
 using MapGenerator;
 using MapGenerator.Tile;
 using UnityEngine;
@@ -25,7 +26,9 @@ namespace Player {
         private CameraControl _cameraControl;
         
         private Vector3 _rawPoint = Vector3Int.zero;
-        private Vector3Int _point = Vector3Int.zero;
+        private Vector3Int _pointPos = Vector3Int.zero;
+        private Vector3 _point => _pointPos + Vector3.one * 0.5f;
+        
         private Block _targetBlock;
         private bool _isShow = false; 
         private float _interactionTime;
@@ -41,7 +44,7 @@ namespace Player {
             _input = pInput;
         }
         
-        private void Interact() {
+        private void FindPoint() {
 
             var cameraTransform = _cameraControl.CameraTransform;
             _isShow = Physics.Raycast(cameraTransform.position, cameraTransform.forward, out var hit, INTERACT_RANGE, LayerMask.GetMask("Ground"));
@@ -49,37 +52,68 @@ namespace Player {
                 return;
 
             _rawPoint = hit.point; 
-            _point = (_rawPoint + cameraTransform.forward * 0.01f).ToVec3Int();
-            _targetBlock = ChunkManager.Instance.GetMapData(_point);
+            _pointPos = (_rawPoint + cameraTransform.forward * 0.01f).ToVec3Int();
+            _targetBlock = ChunkManager.Instance.GetMapData(_pointPos);
         }
 
         private void SelectBoxTransformUpdate() {
             _selectBox.SetActive(_isShow);
-            _selectBox.transform.position = _point + Vector3.one * 0.5f;
+            _selectBox.transform.position = _point;
             _selectBox.transform.rotation = Quaternion.identity;
         }
 
         private void BreakParticleControl() {
-            var idx = TileIdxData.GetFace(_targetBlock, TileIdxData.FaceType.Side);
+            var idx = _targetBlock.GetFace(TileIdxData.FaceType.Side);
             _breakParticleMaterial.SetVector("_Pos", new(idx.X, idx.Y));
-            var direction = (_rawPoint - _point - Vector3.one * 0.5f).GetDirection();
-            var pos = _point + Vector3.one * 0.5f + direction * 0.5f;
-            if (direction.y == 0) {
+            var bigAxis = (_rawPoint - _point).GetBigAxis();
+            var pos = _point + bigAxis * 0.5f;
+            
+            //horizontal
+            if (bigAxis.y == 0) {
                 _breakVParticle.Stop();
                 if(_breakHParticle.isStopped)
                     _breakHParticle.Play();
                                 
                 _breakHParticle.transform.position = pos;
-                _breakHParticle.transform.rotation = Quaternion.Euler(-90, Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg , 0);
+                _breakHParticle.transform.rotation = Quaternion.Euler(-90, Mathf.Atan2(bigAxis.x, bigAxis.z) * Mathf.Rad2Deg , 0);
+                return;
             }
-            else {
-                _breakHParticle.Stop();
-                if(_breakVParticle.isStopped)
-                    _breakVParticle.Play();
+            
+            //vertical
+            _breakHParticle.Stop();
+            if(_breakVParticle.isStopped)
+                _breakVParticle.Play();
                                 
-                _breakVParticle.transform.position = pos;
-            }
+            _breakVParticle.transform.position = pos;
         }
+
+        private float ShowBreakProcess() {
+            _interactionTime += Time.deltaTime;
+            var targetTime = (float)_targetBlock.GetData(BlockTag.BreakTime);
+            var process = _interactionTime / targetTime;
+            _breakProcessMaterial.SetFloat("_BreakProcess", process);
+            
+            return process;
+        }
+
+        private void OnBreakBlock() {
+            _breakParticle.transform.position = _point;
+            _breakParticle.Play();
+            
+            ChunkManager.Instance.SetBlocks((_point, Block.Air));
+            
+            _isShow = false;
+            InventoryData.GetItem(_targetBlock);
+        }
+
+        private void PlaceBlock() {
+            if (!InventoryData.UseItem(out var block))
+                return;
+
+            var bigAxis = (_rawPoint - _point).GetBigAxis();
+            ChunkManager.Instance.SetBlocks((bigAxis + _point, block));
+        }
+        
         //==================================================||Unity 
         private void Awake() {
             _cameraControl = GetComponent<CameraControl>();
@@ -93,39 +127,31 @@ namespace Player {
 
         private void Update() {
 
-            var prevPoint = _point;
+            var prevPoint = _pointPos;
             
-            Interact();
+            FindPoint();
             SelectBoxTransformUpdate();
             
-            if (prevPoint != _point) {
+            if (prevPoint != _pointPos) {
                 CancelTarget();
                 return;
             }
+
+            if (_isShow && _input.PlaceBlock)
+                PlaceBlock();
             
-            if (_isShow && _input.BreakBlock) {
-                BreakParticleControl();    
-                
-                _interactionTime += Time.deltaTime;
-                var targetTime = (float)_targetBlock.GetData(BlockTag.BreakTime);
-                var process = _interactionTime / targetTime;
-                _breakProcessMaterial.SetFloat("_BreakProcess", process);
+            //BreakBlock
+            else if (_isShow && _input.BreakBlock) {
+                BreakParticleControl();
 
-                if (process >= 1) {
-
-                    _breakParticle.transform.position = _point + Vector3.one * 0.5f;
-                    _breakParticle.Play();
-                    ChunkManager.Instance.UpdateBlock((_point + Vector3.one * 0.5f, Block.Air));
-                    _isShow = false;
-                    
-                    CancelTarget();
+                if (ShowBreakProcess() >= 1) {
+                    OnBreakBlock();
+                    CancelTarget();   
                 }
                     
             }
-            else if (_interactionTime > 0 || prevPoint != _point)
+            else if (_interactionTime > 0 || prevPoint != _pointPos)
                 CancelTarget();
-
-
             void CancelTarget() {
                 
                 _breakHParticle.Stop();

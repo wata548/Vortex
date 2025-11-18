@@ -8,6 +8,8 @@ namespace Entity {
         public abstract bool IsJumpStart { get; }
         public abstract Vector2 CameraDirection { get; }
         public abstract bool BreakBlock { get; }
+        public abstract bool PlaceBlock { get; }
+        public abstract int SelectItemSlot { get; }
 
         public abstract bool Menu { get; }
     }

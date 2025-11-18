@@ -8,7 +8,7 @@ using UnityEngine;
 namespace MapGenerator {
     public partial class ChunkManager {
         
-       //==================================================||Fields 
+        //==================================================||Fields 
         //new chunks data
         private readonly ConcurrentStack<Vector3Int> _generateMapDataStack = new();
         
@@ -26,35 +26,41 @@ namespace MapGenerator {
         private readonly ConcurrentQueue<Queue<PaintInfo>> _paintingTempData = new();
         private readonly Dictionary<Vector3Int, Queue<PaintInfo>> _paintingData = new();
         
-       //==================================================||Methods 
-       private void PaintOtherChunk() {
+        //==================================================||Methods 
+        private void PaintOtherChunk() {
 
-           while (_paintingTempData.Count > 0) {
-               _paintingTempData.TryDequeue(out var queue);
-               while (queue.Count > 0) {
-                   var data = queue.Dequeue();
-                   _paintingData.TryAdd(data.Chunk, new());
-                   _paintingData[data.Chunk].Enqueue(data);
-               }
-           }
+            while (_paintingTempData.Count > 0) {
+                _paintingTempData.TryDequeue(out var queue);
+                while (queue.Count > 0) {
+                    var data = queue.Dequeue();
+                    _paintingData.TryAdd(data.Chunk, new());
+                    _paintingData[data.Chunk].Enqueue(data);
+                }
+            }
            
-           var targetChunks = new HashSet<Vector3Int>();
-           foreach (var targetChunk in _paintingData) {
-               if(!_chunkDataStore.ContainsKey(targetChunk.Key) || _chunkDataStore[targetChunk.Key].Mesh == null)
-                   continue;
+            var targetChunks = new HashSet<Vector3Int>();
+            foreach (var targetChunk in _paintingData) {
+                if(!_chunkDataStore.ContainsKey(targetChunk.Key) || _chunkDataStore[targetChunk.Key].Mesh == null)
+                    continue;
 
-               foreach (var data in targetChunk.Value) {
-                   if(data.Force || _chunkDataStore[targetChunk.Key].Map[data.Pos.x, data.Pos.y, data.Pos.z] == Block.Air)
-                       _chunkDataStore[targetChunk.Key].Map[data.Pos.x, data.Pos.y, data.Pos.z] = data.Block;
-               }
-               targetChunks.Add(targetChunk.Key);
-           }
+                var updated = false;
+                foreach (var data in targetChunk.Value) {
+                    var pos = data.Pos;
+                    if (data.Force || _chunkDataStore[targetChunk.Key].Map[pos.x, pos.y, pos.z] == Block.Air) {
 
-           foreach (var chunk in targetChunks) {
-               _paintingData.Remove(chunk);
-               _generateMeshPosStack.Push(chunk);
-           }
-       }
+                        updated |= _chunkDataStore[targetChunk.Key].Map[pos.x, pos.y, pos.z] != data.Block;
+                        _chunkDataStore[targetChunk.Key].Map[pos.x, pos.y, pos.z] = data.Block;
+                    }
+                }
+                if(updated)
+                    targetChunks.Add(targetChunk.Key);
+            }
+
+            foreach (var chunk in targetChunks) {
+                _paintingData.Remove(chunk);
+                _generateMeshPosStack.Push(chunk);
+            }
+        }
        
         private Task GetMapData() {
             while (true) {

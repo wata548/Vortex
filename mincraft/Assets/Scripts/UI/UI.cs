@@ -4,6 +4,7 @@ using MapGenerator;
 using Player;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace DefaultNamespace {
@@ -41,6 +42,9 @@ namespace DefaultNamespace {
 
         public void Quit() {
             Application.Quit();
+        }
+        public void ToTitle() {
+            SceneManager.LoadScene("Main");
         }
 
         private void Update() {

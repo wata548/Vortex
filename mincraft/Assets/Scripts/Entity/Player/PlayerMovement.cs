@@ -1,4 +1,5 @@
 ﻿using Entity;
+using Inventory;
 using UnityEngine;
 
 namespace Player {
@@ -13,6 +14,7 @@ namespace Player {
             _inputSettingObject = pInput;
             GetComponent<CameraControl>().SetUp(_inputSettingObject);
             GetComponent<Interaction>().SetUp(_inputSettingObject);
+            InventoryShower.Instance.SetUp(_inputSettingObject);
         }
 
         public void SetCameraSensitivity(float pValue) {

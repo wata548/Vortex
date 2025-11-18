@@ -2,6 +2,7 @@
 using Entity;
 using Extension;
 using Extension.Test;
+using Inventory;
 using MapGenerator;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -55,6 +56,17 @@ namespace Player {
         private new void Awake() {
             base.Awake();
             Movement = GetComponent<PlayerMovement>();
+            InventoryData.Start();
+        }
+
+        private new void Update() {
+            base.Update();
+            var footPos = FootPos;
+            var delta = Vector3Int.zero;
+            while (ChunkManager.Instance.GetMapData(footPos + delta) != Block.Air)
+                delta += Vector3Int.up;
+            if (delta != Vector3Int.zero)
+                transform.position += delta;
         }
     }
 }

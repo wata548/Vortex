@@ -58,7 +58,7 @@ namespace MapGenerator {
             return targetChunks;
         }
         
-        public void UpdateBlock(params (Vector3 Pos, Block Block)[] pNewDatas) {
+        public void SetBlocks(params (Vector3 Pos, Block Block)[] pNewDatas) {
             var targetChunks = new HashSet<Vector3Int>();
             foreach (var data in pNewDatas) {
                 var pos = Chunk.GetChunkPos(Args, data.Pos, out var chunkIdx);

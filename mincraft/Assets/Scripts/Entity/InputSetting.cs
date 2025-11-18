@@ -14,6 +14,8 @@ namespace Entity {
 
     public interface IPlayerInputSetting {
         bool BreakBlock { get; }
+        bool PlaceBlock { get; }
+        int SelectItemSlot { get; }
         bool Menu { get; }
     }
 }

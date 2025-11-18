@@ -14,7 +14,7 @@ namespace Extension {
         public static Vector3Int ToVec3Int(this Vector3 pTarget) =>
             new(Mathf.FloorToInt(pTarget.x), Mathf.FloorToInt(pTarget.y), Mathf.FloorToInt(pTarget.z));
         
-        public static Vector3 GetDirection(this Vector3 pTarget) {
+        public static Vector3 GetBigAxis(this Vector3 pTarget) {
             var absX = Mathf.Abs(pTarget.x);
             var absY = Mathf.Abs(pTarget.y);
             var absZ = Mathf.Abs(pTarget.z);
