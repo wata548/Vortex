@@ -17,11 +17,14 @@ namespace Player {
         [SerializeField] private KeyCode _rightItemSlot = KeyCode.JoystickButton1;
         [SerializeField] private KeyCode _menu = KeyCode.JoystickButton6;
 
+        [Space, Header("Test")] 
+        [SerializeField] private bool _allowSuperJump = false;
+
        //==================================================||Movement 
         public override Vector3 InputDirection =>
             new(Input.GetAxisRaw(_moveForward), 0, Input.GetAxisRaw(_moveSide));
 
-        public override bool IsJumpStart => Input.GetKeyDown(_jump);
+        public override bool IsJumpStart => Input.GetKeyDown(_jump) && (_allowSuperJump||Time.timeScale > 0);
         
        //==================================================||Camera 
         public override Vector2 CameraDirection =>

@@ -17,9 +17,14 @@ namespace Player {
         [SerializeField] private KeyCode _menu = KeyCode.Escape;
         [SerializeField] private string _cameraYaw = "Mouse X";
         [SerializeField] private string _cameraPitch = "Mouse Y";
+        
+        [Space, Header("Test")] 
+        [SerializeField] private bool _allowSuperJump = false;
 
+        
         public override bool IsJumpStart =>
-            Input.GetKeyDown(_jump);
+            Input.GetKeyDown(_jump) && (_allowSuperJump||Time.timeScale > 0);
+
 
         public override Vector2 CameraDirection =>
             new(Input.GetAxisRaw(_cameraYaw), -Input.GetAxisRaw(_cameraPitch));
