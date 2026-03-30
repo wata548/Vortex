@@ -76,7 +76,7 @@ public class PerLinNoise
 
         float RandomDotProduction2D(int gridX, int gridY, Vector2 coor) {
 
-            float degree = (float)(new Random(GetSeed()).NextDouble() * 2 * Mathf.PI);
+            float degree = (GetSeed() % 10000 / 10000f * 2 * Mathf.PI);
             float deltaX = coor.x - gridX;
             float deltaY = coor.y - gridY;
 
@@ -95,7 +95,7 @@ public class PerLinNoise
                 int seed = 0;
 
                 int[] RandomMultiple = { 13453, 8535};
-                int[] RandomIncrese = { 7442243, 2364257};
+                int[] RandomIncrese = { 74243, 23647};
 
                 seed ^= gridX * RandomMultiple[0] + RandomIncrese[0];
                 seed ^= gridY * RandomMultiple[1] + RandomIncrese[1];
